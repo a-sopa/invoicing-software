@@ -7,14 +7,44 @@
 #define EAN_MAX 14 /* Numero max de caracteres do EAN */
 #define DESC_MAX 51 /* Numero max de caracteres do*/
 #define STR_MAX 65536 /* Numero max de caractere das strings*/
-#define VEC_MAX 10000 /* Numero max de produtos*/
+#define PROD_MAX 10000 /* Numero max de produtos*/
+
+typedef struct {
+    char ean[EAN_MAX];
+    int iva;
+    float preco;
+    int quantidade;
+    char descricao[DESC_MAX];
+} produto;
 
 
-int addProduto(){ 
-    /*Adiciona/Atualiza um produto (key = p)*/
+int testaEAN(char ean[]){
+    int tamanho = strlen(ean);
+    if (tamanho != 13 && tamanho != 8)
+        return 1;
+
+    return 0;
+}
+
+int addProduto(produto lista_prod[], int *num){ 
+    /*Introduz um novo produto no sistema (key = p)
+      p <ean> <iva> <preco> <quantidade> <descricao>  */
+    if (testaEAN){
+        printf("invalid ean");
+        return 1;
+    }
+    if (*num >= PROD_MAX){
+        printf("invalid product");
+        return 1;
+    }
+
+
+    char ean[EAN_MAX];
     char resto_linha[STR_MAX];
 
     fgets(resto_linha, sizeof(resto_linha), stdin);
+    
+    num++;
     printf("%s", resto_linha);
     printf("Adicionou Produto\n");
 }
@@ -51,13 +81,15 @@ int apagaRegisto(){
 
 
 int main(){
+    produto lista_prod[PROD_MAX];
     char input[STR_MAX];
+    int numero_produtos = 0;
 
     while(1){
         scanf(" %c", input);
         switch(input[0]){
             case 'q': return 0;
-            case 'p': addProduto(); break;
+            case 'p': addProduto(lista_prod, &numero_produtos); break;
             case 'l': listaProduto(); break;
             case 'a': addCesto(); break;
             case 'r': resumoFat(); break;
