@@ -5,10 +5,10 @@
 #include <ctype.h>
 
 #define EAN_MAX 14 /* Numero max de caracteres do EAN */
-#define DESC_MAX 51 /* Numero max de caracteres do*/
-#define STR_MAX 65536 /* Numero max de caractere das strings*/
+#define DESC_MAX 51 /* Numero max de caracteres da descrição*/
+#define STR_MAX 65536 /* Numero max de caracteres das strings*/
 #define PROD_MAX 10000 /* Numero max de produtos*/
-#define CONVERSAO '0'
+#define CONVERSAO '0' /* Constante de conversão de char para int (dígitos)*/
 
 #define EAN_ERR "invalid ean"
 #define IVA_ERR "invalid iva"
@@ -33,27 +33,31 @@ typedef struct {
 
 
 int testaEAN(char ean[]){
-    int tamanho = strlen(ean), i, soma = 0, digitoVer, digitoCalc;
+    int tamanho = strlen(ean), i, soma = 0, digitoVer, valor, digitoCalc;
     /*Verificar o tamanho válido*/
     if (tamanho != 13 && tamanho != 8)
         return 1;
 
+    /*Converter o dígito para inteiro*/
     digitoVer = ean[tamanho - 1] - CONVERSAO;
 
     /*Verificar o dígito de verificação*/
     for (i = 0; i < tamanho - 1; i++){
-        int valor = ean[i] - CONVERSAO;
+        /*Obter o dígito*/
+        valor = ean[i] - CONVERSAO;
 
         if (i % 2 == 0) 
-            /*Caso o digito seja par*/
+            /*Caso o indíce seja par*/
             soma += valor;
         
         else 
-            /*Caso o digito seja impar*/
+            /*Caso o indíce seja impar*/
             soma += (valor*3);
     }
+    /*Calcular o dígito de verificação*/
     digitoCalc = (10 - (soma % 10)) % 10;
     
+    /*Comparar o dígito calculado com o dígito introduzido*/
     if (digitoCalc != digitoVer)
         return 1;
 
