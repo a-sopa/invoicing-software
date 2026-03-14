@@ -8,44 +8,98 @@
 #define DESC_MAX 51 /* Numero max de caracteres do*/
 #define STR_MAX 65536 /* Numero max de caractere das strings*/
 #define PROD_MAX 10000 /* Numero max de produtos*/
+#define CONVERSAO '0'
+
+#define EAN_ERR "invalid ean"
+#define IVA_ERR "invalid iva"
+#define PRICE_ERR "invalid price"
+#define QUANT_ERR "invalid quantity"
+#define DESC_ERR "invalid description"
+#define PROD_IN_USE_ERR "product in use"
+#define PROD_ERR "invalid product"
 
 typedef struct {
-    char ean[EAN_MAX];
-    int iva;
-    float preco;
+    double preco;
     int quantidade;
+    char iva;
+    char ean[EAN_MAX];
     char descricao[DESC_MAX];
-} produto;
+} Produto;
+
+typedef struct {
+    char c;
+    int num;
+} IVA;
 
 
 int testaEAN(char ean[]){
-    int tamanho = strlen(ean);
+    int tamanho = strlen(ean), i, soma = 0, digitoVer, digitoCalc;
+    /*Verificar o tamanho válido*/
     if (tamanho != 13 && tamanho != 8)
+        return 1;
+
+    digitoVer = ean[tamanho - 1] - CONVERSAO;
+
+    /*Verificar o dígito de verificação*/
+    for (i = 0; i < tamanho - 1; i++){
+        int valor = ean[i] - CONVERSAO;
+
+        if (i % 2 == 0) 
+            /*Caso o digito seja par*/
+            soma += valor;
+        
+        else 
+            /*Caso o digito seja impar*/
+            soma += (valor*3);
+    }
+    digitoCalc = (10 - (soma % 10)) % 10;
+    
+    if (digitoCalc != digitoVer)
         return 1;
 
     return 0;
 }
 
-int addProduto(produto lista_prod[], int *num){ 
+int addProduto(Produto lista_prod[], int *num, char linha[]){ 
     /*Introduz um novo produto no sistema (key = p)
       p <ean> <iva> <preco> <quantidade> <descricao>  */
-    if (testaEAN){
-        printf("invalid ean");
-        return 1;
+
+    char comando, ean[EAN_MAX], iva, descricao[DESC_MAX];
+    float preco;
+    int quantidade;
+
+    /*Obter o resto da linha*/
+    sscanf(linha, " %c %s %c %f %d %[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
+     
+    /*TESTES*/
+    if (testaEAN(ean)){
+        /*O código EAN é inválido*/
+        puts(EAN_ERR);
+        return 0;
     }
-    if (*num >= PROD_MAX){
-        printf("invalid product");
-        return 1;
+    else if (preco <= 0){
+        /*O preço é inferior/igual a 0*/
+        puts(PRICE_ERR);
+        return 0;
     }
-
-
-    char ean[EAN_MAX];
-    char resto_linha[STR_MAX];
-
-    fgets(resto_linha, sizeof(resto_linha), stdin);
+    else if (quantidade <= 0){
+        /*A quantidade introduzida é negativa*/
+        puts(QUANT_ERR);
+        return 0;
+    }
+    else if (strlen(descricao) > DESC_MAX){
+        /*A descrição ultrapassa o tamanho máximo*/
+        puts(DESC_ERR);
+        return 0;
+    }
+    else if (*num >= PROD_MAX){
+        /*A quantidade de produtos excede o máximo*/
+        puts(PROD_ERR);
+        return 0;
+    }
+    
     
     num++;
-    printf("%s", resto_linha);
     printf("Adicionou Produto\n");
 }
 
@@ -81,15 +135,14 @@ int apagaRegisto(){
 
 
 int main(){
-    produto lista_prod[PROD_MAX];
+    Produto lista_prod[PROD_MAX];
     char input[STR_MAX];
     int numero_produtos = 0;
 
-    while(1){
-        scanf(" %c", input);
+    while(fgets(input, PROD_MAX, stdin)){
         switch(input[0]){
             case 'q': return 0;
-            case 'p': addProduto(lista_prod, &numero_produtos); break;
+            case 'p': addProduto(lista_prod, &numero_produtos, input); break;
             case 'l': listaProduto(); break;
             case 'a': addCesto(); break;
             case 'r': resumoFat(); break;
