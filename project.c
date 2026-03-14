@@ -20,8 +20,9 @@
 #define PROD_ERR "invalid product" /* Erro: */
 
 typedef struct {
-    double preco;
+    double preco; 
     int quantidade;
+    int vendido; /*Quantidade vendida*/
     char iva;
     char ean[EAN_MAX];
     char descricao[DESC_MAX];
@@ -76,7 +77,6 @@ int testaEAN(char ean[]){
     for (i = 0; i < tamanho - 1; i++){
         /*Obter o dígito*/
         valor = ean[i] - CONVERSAO;
-
         if (i % 2 == 0) 
             /*Caso o indíce seja par*/
             soma += valor;
@@ -84,7 +84,7 @@ int testaEAN(char ean[]){
         else 
             /*Caso o indíce seja impar*/
             soma += (valor*3);
-    }
+        }
     /*Calcular o dígito de verificação*/
     digitoCalc = (10 - (soma % 10)) % 10;
     
@@ -111,7 +111,7 @@ int testaDescricao(char descricao[]){
         return 1;
 
     /*Verifica se a descricao tem menos de 50 bytes*/
-    else if (strlen(descricao) > DESC_MAX)
+    if (strlen(descricao) >= DESC_MAX)
         return 1;
 
     return 0;
@@ -122,12 +122,12 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
       p <ean> <iva> <preco> <quantidade> <descricao>  */
 
     /*Inicializar variáveis*/
-    char comando, ean[EAN_MAX], iva, descricao[DESC_MAX];
+    char comando, ean[EAN_MAX], iva, descricao[STR_MAX];
     float preco;
     int quantidade, i;
 
     /*Obter o resto da linha*/
-    sscanf(linha, " %c %s %c %f %d%[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
+    sscanf(linha, " %c %s %c %f %d %[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
      
     /*TESTES*/
     if (testaEAN(ean)){
@@ -145,7 +145,7 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
         puts(PRICE_ERR);
         return 0;
     }
-    else if (quantidade <= 0){
+    else if (quantidade < 0){
         /*A quantidade introduzida é negativa*/
         puts(QUANT_ERR);
         return 0;
@@ -158,16 +158,16 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
     
     /*Verificar se o produto já existe na tabela de produtos*/
     for (i = 0; i < *num; i++){
-        if (strcmp(tabela_prod[i].ean, ean)){
+        if (strcmp(tabela_prod[i].ean, ean) == 0){
             /*Atualizar o stock*/
             tabela_prod[i].preco = preco;
             tabela_prod[i].quantidade = quantidade;
             tabela_prod[i].iva = iva;
-            strcpy(tabela_prod[*num].descricao, descricao);
+            strcpy(tabela_prod[i].descricao, descricao);
+            printf("%d", quantidade);
             return 0;
         }
     }
-
     /*TESTE*/
     if (*num >= PROD_MAX){
         /*A quantidade de produtos excede o máximo*/
@@ -178,17 +178,47 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
     /*Adicionar os valores à tabela de produtos*/
     tabela_prod[*num].preco = preco;
     tabela_prod[*num].quantidade = quantidade;
+    tabela_prod[*num].vendido = 0;
     tabela_prod[*num].iva = iva;
     /*Copiar as string para a tabela */
     strcpy(tabela_prod[*num].ean, ean);  
     strcpy(tabela_prod[*num].descricao, descricao); 
     
     (*num)++;
+
+    printf("%d\n", quantidade);
+    return 0;
 }
 
-int listaProduto(){
+int testaProduto(int *num){
+    if (num == 0){
+        return 1;
+    }
+}
+
+int listaProduto(Produto tabela_produtos[], int *num, char linha[]){
     /*Imprime a info de todos os produtos (key = l)*/
-    printf("Lista de Produtos\n");
+    char comando, wildcard[STR_MAX];
+    int i;
+
+    sscanf("%c %s", &comando, wildcard);
+
+    if (testaProduto){
+        printf("%s: no such product\n", wildcard);
+    }
+
+    if (strlen(linha) == 2){
+        for (i = 0; i < *num; i++){
+            printf("%s %c %.2f 0 %d %s\n",
+            tabela_produtos[i].ean,
+            tabela_produtos[i].iva,
+            tabela_produtos[i].preco,
+            tabela_produtos[i].quantidade,
+            tabela_produtos[i].descricao);
+        }
+    } 
+    sscanf(linha, " %c ", &comando);
+    
 }
 
 int addCesto(){
@@ -229,7 +259,7 @@ int main(int num_palavras, char *lista_palavras[]){
         switch(input[0]){
             case 'q': return 0;
             case 'p': addProduto(tabela_prod, &numero_produtos, input, tabela_iva, &numero_ivas); break;
-            case 'l': listaProduto(); break;
+            case 'l': listaProduto(tabela_prod, &numero_produtos, input); break;
             case 'a': addCesto(); break;
             case 'r': resumoFat(); break;
             case 'f': fatura(); break;
