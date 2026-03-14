@@ -4,19 +4,20 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#define EAN_MAX 14 /* Numero max de caracteres do EAN */
-#define DESC_MAX 51 /* Numero max de caracteres da descrição*/
-#define STR_MAX 65536 /* Numero max de caracteres das strings*/
-#define PROD_MAX 10000 /* Numero max de produtos*/
+#define EAN_MAX 14 /* Número máx de caracteres do EAN */
+#define DESC_MAX 51 /* Número máx de caracteres da descrição*/
+#define STR_MAX 65536 /* Número máx de caracteres das strings*/
+#define PROD_MAX 10000 /* Número máx de produtos*/
+#define IVA_MAX 26 /* Número máx de taxas de IVA */
 #define CONVERSAO '0' /* Constante de conversão de char para int (dígitos)*/
 
-#define EAN_ERR "invalid ean"
-#define IVA_ERR "invalid iva"
-#define PRICE_ERR "invalid price"
-#define QUANT_ERR "invalid quantity"
-#define DESC_ERR "invalid description"
-#define PROD_IN_USE_ERR "product in use"
-#define PROD_ERR "invalid product"
+#define EAN_ERR "invalid ean" /* Erro: EAN inválido*/
+#define IVA_ERR "invalid iva" /* Erro: IVA inválido*/
+#define PRICE_ERR "invalid price" /* Erro: preço negativo*/
+#define QUANT_ERR "invalid quantity" /* Erro: quantidade negativa*/
+#define DESC_ERR "invalid description" /* Erro: descrição demasiado longa*/
+#define PROD_IN_USE_ERR "product in use" /*Erro: produto em utilização*/
+#define PROD_ERR "invalid product" /* Erro: */
 
 typedef struct {
     double preco;
@@ -31,6 +32,36 @@ typedef struct {
     int num;
 } IVA;
 
+void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], int *numero_ivas){
+    /*Função para carregar os valores dos IVAs*/
+    FILE *ficheiro_ivas = NULL; /*Assumir que o ficheiro está vazio*/
+
+    if (numero_palavras > 1){
+        /*Caso o utilizador tenha inserido algum ficheiro externo*/
+        ficheiro_ivas = fopen(lista_palavras[1], "r"); /*Abrir o ficheiro*/
+    }
+    /*Verificar se o programa não está vazio*/
+    if (ficheiro_ivas != NULL){
+        char letra;
+        int valor;
+        
+        /*fscanf retorna o número de argumentos lidos*/
+        while (fscanf(ficheiro_ivas, " %c %d", &letra, &valor) == 2){
+            tabela_iva[*numero_ivas].c = letra;
+            tabela_iva[*numero_ivas].num = valor;
+            (*numero_ivas)++;
+            }
+    fclose(ficheiro_ivas); /*Fechar o ficheiro*/
+    }
+    else{
+        /*Caso não tenha sido inserido nenhum ficheiro*/
+        tabela_iva[0].c = 'A'; tabela_iva[0].num = 0;
+        tabela_iva[1].c = 'B'; tabela_iva[1].num = 6;
+        tabela_iva[2].c = 'C'; tabela_iva[2].num = 13;
+        tabela_iva[3].c = 'D'; tabela_iva[3].num = 23;
+        *numero_ivas = 4; 
+    }
+}
 
 int testaEAN(char ean[]){
     int tamanho = strlen(ean), i, soma = 0, digitoVer, valor, digitoCalc;
@@ -64,7 +95,17 @@ int testaEAN(char ean[]){
     return 0;
 }
 
-int addProduto(Produto lista_prod[], int *num, char linha[]){ 
+int testaIVA(char iva, IVA tabela_iva[], int *numero_ivas){
+    int i;
+    for (i = 0; i < *numero_ivas; i++){
+        if (iva == tabela_iva[i].c){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], int *numero_ivas){ 
     /*Introduz um novo produto no sistema (key = p)
       p <ean> <iva> <preco> <quantidade> <descricao>  */
 
@@ -79,6 +120,11 @@ int addProduto(Produto lista_prod[], int *num, char linha[]){
     if (testaEAN(ean)){
         /*O código EAN é inválido*/
         puts(EAN_ERR);
+        return 0;
+    }
+    else if (testaIVA(iva, tabela_iva, numero_ivas)){
+        /*O caracter do IVA é inválido*/
+        puts(IVA_ERR);
         return 0;
     }
     else if (preco <= 0){
@@ -103,7 +149,7 @@ int addProduto(Produto lista_prod[], int *num, char linha[]){
     }
     
     
-    num++;
+    (*num)++;
     printf("Adicionou Produto\n");
 }
 
@@ -138,15 +184,18 @@ int apagaRegisto(){
 }
 
 
-int main(){
-    Produto lista_prod[PROD_MAX];
-    char input[STR_MAX];
-    int numero_produtos = 0;
+int main(int num_palavras, char *lista_palavras[]){
+    Produto tabela_prod[PROD_MAX]; /*Criar a tabela de produtos*/
+    IVA tabela_iva[IVA_MAX]; /*Criar a tabela com os valores de IVA*/
+    char input[STR_MAX]; /*Criar tabela para recolher o input*/
+    int numero_produtos = 0, numero_ivas = 0;
 
-    while(fgets(input, PROD_MAX, stdin)){
+    carregaIVA(num_palavras, lista_palavras, tabela_iva, &numero_ivas);
+
+    while(fgets(input, STR_MAX, stdin)){
         switch(input[0]){
             case 'q': return 0;
-            case 'p': addProduto(lista_prod, &numero_produtos, input); break;
+            case 'p': addProduto(tabela_prod, &numero_produtos, input, tabela_iva, &numero_ivas); break;
             case 'l': listaProduto(); break;
             case 'a': addCesto(); break;
             case 'r': resumoFat(); break;
@@ -155,7 +204,6 @@ int main(){
             case 'd': apagaRegisto(); break;
             default: break;
         }
-        
     }
     return 0;
 }
