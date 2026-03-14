@@ -105,16 +105,29 @@ int testaIVA(char iva, IVA tabela_iva[], int *numero_ivas){
     return 1;
 }
 
+int testaDescricao(char descricao[]){
+    /*Verifica se começa com maiuscula*/
+    if (descricao[0] < 'A' || descricao[0] > 'Z')
+        return 1;
+
+    /*Verifica se a descricao tem menos de 50 bytes*/
+    else if (strlen(descricao) > DESC_MAX)
+        return 1;
+
+    return 0;
+}
+
 int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], int *numero_ivas){ 
     /*Introduz um novo produto no sistema (key = p)
       p <ean> <iva> <preco> <quantidade> <descricao>  */
 
+    /*Inicializar variáveis*/
     char comando, ean[EAN_MAX], iva, descricao[DESC_MAX];
     float preco;
-    int quantidade;
+    int quantidade, i;
 
     /*Obter o resto da linha*/
-    sscanf(linha, " %c %s %c %f %d %[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
+    sscanf(linha, " %c %s %c %f %d%[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
      
     /*TESTES*/
     if (testaEAN(ean)){
@@ -137,20 +150,40 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
         puts(QUANT_ERR);
         return 0;
     }
-    else if (strlen(descricao) > DESC_MAX){
+    else if (testaDescricao(descricao)){
         /*A descrição ultrapassa o tamanho máximo*/
         puts(DESC_ERR);
         return 0;
     }
-    else if (*num >= PROD_MAX){
+    
+    /*Verificar se o produto já existe na tabela de produtos*/
+    for (i = 0; i < *num; i++){
+        if (strcmp(tabela_prod[i].ean, ean)){
+            /*Atualizar o stock*/
+            tabela_prod[i].preco = preco;
+            tabela_prod[i].quantidade = quantidade;
+            tabela_prod[i].iva = iva;
+            strcpy(tabela_prod[*num].descricao, descricao);
+            return 0;
+        }
+    }
+
+    /*TESTE*/
+    if (*num >= PROD_MAX){
         /*A quantidade de produtos excede o máximo*/
         puts(PROD_ERR);
         return 0;
     }
-    
+
+    /*Adicionar os valores à tabela de produtos*/
+    tabela_prod[*num].preco = preco;
+    tabela_prod[*num].quantidade = quantidade;
+    tabela_prod[*num].iva = iva;
+    /*Copiar as string para a tabela */
+    strcpy(tabela_prod[*num].ean, ean);  
+    strcpy(tabela_prod[*num].descricao, descricao); 
     
     (*num)++;
-    printf("Adicionou Produto\n");
 }
 
 int listaProduto(){
