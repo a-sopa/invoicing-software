@@ -38,7 +38,7 @@ void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], i
     FILE *ficheiro_ivas = NULL; /*Assumir que o ficheiro está vazio*/
 
     if (numero_palavras > 1){
-        /*Caso o utilizador tenha inserido algum ficheiro externo*/
+        /*Caso o utilizador tenha inserido algum ficheiro como argumento*/
         ficheiro_ivas = fopen(lista_palavras[1], "r"); /*Abrir o ficheiro*/
     }
     /*Verificar se o programa não está vazio*/
@@ -162,7 +162,7 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
             tabela_prod[i].quantidade = quantidade;
             tabela_prod[i].iva = iva;
             strcpy(tabela_prod[i].descricao, descricao);
-            printf("%d", quantidade);
+            printf("%d\n", quantidade);
             return 0;
         }
     }
@@ -188,17 +188,24 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
     return 0;
 }
 
-int testaProduto(int *num){
-    if (num == 0){
-        return 1;
-    }
+int testaToken(char *token, char *ean){
     return 0;
+}
+
+/*Função auxiliar para imprimir os produtos da tabela*/
+void imprimeProduto(int indice, Produto tabela_produtos[]){
+    printf("%s %c %.2f 0 %d %s\n",
+        tabela_produtos[indice].ean,
+        tabela_produtos[indice].iva,
+        tabela_produtos[indice].preco,
+        tabela_produtos[indice].quantidade,
+        tabela_produtos[indice].descricao);
 }
 
 void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
     /*Imprime a info de todos os produtos (key = l)*/
     char *token, delimitadores[] = " \n\t";
-    int i, verifica;
+    int i, verifica = 0;
 
     /*Primeiro corte na string (caracter l)*/
     token = strtok(linha, delimitadores);
@@ -207,23 +214,33 @@ void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
 
     /*Caso o utilizador apenas tenha inserido 'l' */
     if (token == NULL){
-        /*Inicializar a variável que testa se há produtos*/
-        verifica = 0;
         for (i = 0; i < *num; i++){
             /*Apenas imprime se houver stock*/
             if (tabela_produtos[i].quantidade > 0){
-                printf("%s %c %.2f 0 %d %s\n",
-                    tabela_produtos[i].ean,
-                    tabela_produtos[i].iva,
-                    tabela_produtos[i].preco,
-                    tabela_produtos[i].quantidade,
-                    tabela_produtos[i].descricao);
+                imprimeProduto(i, tabela_produtos);
+                /*Atualizar a variável de verificação*/
                 verifica = 1;
             }
         }
         if (verifica == 0)
+            /*Imprimir mensagem de erro*/
             printf("*: no such product\n");
         return;
+    }
+
+    while (token != NULL){
+        for (i = 0; i < *num; i++){
+            /*Verifica se existe stock e se o EAN corresponde ao token*/
+            if (tabela_produtos[i].quantidade > 0 && testaToken(token, tabela_produtos[i].ean)){
+                imprimeProduto(i, tabela_produtos);
+                /*Atualizar a variável de verificação*/
+                verifica = 1;
+            }
+        }
+        if (verifica = 0)
+            printf("%s: no such product", token);
+        
+        token = strtok(NULL, delimitadores);
     }
 }
 
