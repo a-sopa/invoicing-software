@@ -72,7 +72,6 @@ int testaEAN(char ean[]){
 
     /*Converter o dígito para inteiro*/
     digitoVer = ean[tamanho - 1] - CONVERSAO;
-
     /*Verificar o dígito de verificação*/
     for (i = 0; i < tamanho - 1; i++){
         /*Obter o dígito*/
@@ -80,7 +79,6 @@ int testaEAN(char ean[]){
         if (i % 2 == 0) 
             /*Caso o indíce seja par*/
             soma += valor;
-        
         else 
             /*Caso o indíce seja impar*/
             soma += (valor*3);
@@ -194,6 +192,7 @@ int testaProduto(int *num){
     if (num == 0){
         return 1;
     }
+    return 0;
 }
 
 int listaProduto(Produto tabela_produtos[], int *num, char linha[]){
@@ -203,8 +202,8 @@ int listaProduto(Produto tabela_produtos[], int *num, char linha[]){
 
     sscanf("%c %s", &comando, wildcard);
 
-    if (testaProduto){
-        printf("%s: no such product\n", wildcard);
+    if (testaProduto(num)){
+        printf("*: no such product\n");
     }
 
     if (strlen(linha) == 2){
