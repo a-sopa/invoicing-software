@@ -291,7 +291,7 @@ int procuraProduto(Produto tabela_produtos[], int num_prod, char ean[]){
 /*Função auxiliar para calcular o preco de um produto com IVA*/
 double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int *num_ivas, int quant){
     double preco = tabela_produtos[indice].preco;
-    int valor_iva, i;
+    int valor_iva = 0, i;
     char iva_char = tabela_produtos[indice].iva;
     
     /*Descobrir o valor do iva*/
@@ -306,8 +306,8 @@ double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int *nu
 
 void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **cesto, int *num_cesto, IVA tabela_iva[], int *num_ivas, int *capacidade){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
-    int quant, input = 0, indice_tabela, i, j, quant_cesto = 0, indice_cesto = NAO_EXISTE, q_atual_cesto = 0;
-    char comando, ean[EAN_MAX], arg1[EAN_MAX], arg2[EAN_MAX], delimitadores[] = " \n\t"; 
+    int quant = 0, input = 0, indice_tabela, i, j, quant_cesto = 0, indice_cesto = NAO_EXISTE, q_atual_cesto = 0;
+    char comando, ean[EAN_MAX], arg1[EAN_MAX], arg2[EAN_MAX]; 
     double preco_com_iva;
     
     input = sscanf(linha, " %c %s %s", &comando, arg1, arg2);
@@ -334,16 +334,16 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
             indice_tabela = procuraProduto(tabela_produtos, *num_prod, (*cesto)[i].ean);
 
             /*Caso o indice exista calcular o preco com IVA*/
-            if (indice_tabela != NAO_EXISTE)
+            if (indice_tabela != NAO_EXISTE){
                 preco_com_iva = precoIVA(tabela_produtos, tabela_iva, indice_tabela, num_ivas, (*cesto)[i].quantidade);
-            
-            /*Apresentar as informações*/
-            printf("%c %.2f %d %.2f %s\n", 
-            tabela_produtos[indice_tabela].iva,
-            tabela_produtos[indice_tabela].preco,
-            (*cesto)[i].quantidade,
-            preco_com_iva,
-            tabela_produtos[indice_tabela].descricao);
+                /*Apresentar as informações*/
+                printf("%c %.2f %d %.2f %s\n", 
+                tabela_produtos[indice_tabela].iva,
+                tabela_produtos[indice_tabela].preco,
+                (*cesto)[i].quantidade,
+                preco_com_iva,
+                tabela_produtos[indice_tabela].descricao);
+            }
         }
         return;
     }
