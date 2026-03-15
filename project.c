@@ -304,6 +304,7 @@ double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int *nu
     return preco * quant * (1.0 + (valor_iva / 100.0));
 }
 
+/*Função para */
 void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **cesto, int *num_cesto, IVA tabela_iva[], int *num_ivas, int *capacidade){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
     int quant = 0, input = 0, indice_tabela, i, j, quant_cesto = 0, indice_cesto = NAO_EXISTE, q_atual_cesto = 0;
@@ -437,9 +438,37 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     return;
 }
 
-void resumoFat(){
+void resumoFat(Produto tabela_produtos[], char linha[], int *num_prod){
     /*Resumo da Faturação (key = r)*/
-    printf("Resumo\n");
+    char comando, ean[EAN_MAX];
+    int input = 0, indice;
+    input = sscanf(linha, "%c %s", &comando, ean);
+
+    /*TESTES*/
+    if (testaEAN(ean)){
+        puts(EAN_ERR);
+        return;
+    }
+
+    indice = procuraProduto(tabela_produtos, *num_prod, ean);
+
+    if (indice == NAO_EXISTE){
+        printf("%s"NO_PROD_ERR"\n", ean);
+    }
+
+    /*Caso o utilizador não introduza argumentos */
+    if (input == 1){
+        return;
+    }
+    /*Caso o utilizador introduza argumentos*/
+    else{
+        printf("%s %d %s\n", 
+            tabela_produtos[indice].ean,
+            tabela_produtos[indice].quantidade,
+            tabela_produtos[indice].descricao
+        );
+        return;
+    }
 }
 
 void fatura(){
@@ -473,7 +502,7 @@ int main(int num_palavras, char *lista_palavras[]){
             case 'p': addProduto(tabela_prod, &numero_produtos, input, tabela_iva, &numero_ivas); break;
             case 'l': listaProduto(tabela_prod, &numero_produtos, input); break;
             case 'a': addCesto(tabela_prod, &numero_produtos, input, &cesto, &num_itens_cesto, tabela_iva, &numero_ivas, &capacidade); break;
-            case 'r': resumoFat(); break;
+            case 'r': resumoFat(tabela_prod, input, &numero_produtos); break;
             case 'f': fatura(); break;
             case 'c': listaFat(); break;
             case 'd': apagaRegisto(); break;
