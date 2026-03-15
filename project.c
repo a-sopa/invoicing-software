@@ -195,52 +195,59 @@ int testaProduto(int *num){
     return 0;
 }
 
-int listaProduto(Produto tabela_produtos[], int *num, char linha[]){
+void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
     /*Imprime a info de todos os produtos (key = l)*/
-    char comando, wildcard[STR_MAX];
-    int i;
+    char *token, delimitadores[] = " \n\t";
+    int i, verifica;
 
-    sscanf("%c %s", &comando, wildcard);
+    /*Primeiro corte na string (caracter l)*/
+    token = strtok(linha, delimitadores);
+    /*Segundo corte na string (tentar apanhar uma wildcard, se introduzida)*/
+    token = strtok(NULL, delimitadores);
 
-    if (testaProduto(num)){
-        printf("*: no such product\n");
-    }
-
-    if (strlen(linha) == 2){
+    /*Caso o utilizador apenas tenha inserido 'l' */
+    if (token == NULL){
+        /*Inicializar a variável que testa se há produtos*/
+        verifica = 0;
         for (i = 0; i < *num; i++){
-            printf("%s %c %.2f 0 %d %s\n",
-            tabela_produtos[i].ean,
-            tabela_produtos[i].iva,
-            tabela_produtos[i].preco,
-            tabela_produtos[i].quantidade,
-            tabela_produtos[i].descricao);
+            /*Apenas imprime se houver stock*/
+            if (tabela_produtos[i].quantidade > 0){
+                printf("%s %c %.2f 0 %d %s\n",
+                    tabela_produtos[i].ean,
+                    tabela_produtos[i].iva,
+                    tabela_produtos[i].preco,
+                    tabela_produtos[i].quantidade,
+                    tabela_produtos[i].descricao);
+                verifica = 1;
+            }
         }
-    } 
-    sscanf(linha, " %c ", &comando);
-    
+        if (verifica == 0)
+            printf("*: no such product\n");
+        return;
+    }
 }
 
-int addCesto(){
+void addCesto(){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
     printf("Adicionou ao Cesto\n");
 }
 
-int resumoFat(){
+void resumoFat(){
     /*Resumo da Faturação (key = r)*/
     printf("Resumo\n");
 }
 
-int fatura(){
+void fatura(){
     /*Fatura os produtos no cesto (key = f)*/
     printf("Fatura\n");
 }
 
-int listaFat(){
+void listaFat(){
     /*Lista as faturas do sistema (key = c)*/
     printf("Lista as faturas\n");    
 }
 
-int apagaRegisto(){
+void apagaRegisto(){
     /*Apaga o registo de um produto ou fatura (key = d)*/
     printf("Apaga o Registo\n");
 }
