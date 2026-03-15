@@ -18,6 +18,7 @@
 #define DESC_ERR "invalid description" /* Erro: descrição demasiado longa*/
 #define PROD_IN_USE_ERR "product in use" /*Erro: produto em utilização*/
 #define PROD_ERR "invalid product" /* Erro: */
+#define NO_PROD_ERR ": no such product"
 
 typedef struct {
     double preco; 
@@ -188,16 +189,31 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
     return 0;
 }
 
+/*Função auxiliar que tenta corresponder os tokens com codigos ean*/
 int testaToken(char *token, char *ean){
+    /*Caso base (o token e o código têm de terminar)*/
+    if (*token == '\0')
+        return (*ean == '\0');
+
+    /*Caso o token seja '*'*/
+    if (*token == '*')
+        return (testaToken(token + 1, ean) || 
+                (*ean != '\0' && testaToken(token, ean + 1)));
+    
+    /*Se o token for um '?' ou se o token corresponder ao digito do ean*/
+    if (*token != '\0' && (*token == '?' || *token == *ean))
+        /*Avançar um espaço para ambos*/
+        return testaToken(token + 1, ean + 1);
     return 0;
 }
 
 /*Função auxiliar para imprimir os produtos da tabela*/
 void imprimeProduto(int indice, Produto tabela_produtos[]){
-    printf("%s %c %.2f 0 %d %s\n",
+    printf("%s %c %.2f %d %d %s\n",
         tabela_produtos[indice].ean,
         tabela_produtos[indice].iva,
         tabela_produtos[indice].preco,
+        tabela_produtos[indice].vendido,
         tabela_produtos[indice].quantidade,
         tabela_produtos[indice].descricao);
 }
@@ -224,7 +240,7 @@ void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
         }
         if (verifica == 0)
             /*Imprimir mensagem de erro*/
-            printf("*: no such product\n");
+            printf("*"NO_PROD_ERR"\n");
         return;
     }
 
@@ -237,8 +253,8 @@ void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
                 verifica = 1;
             }
         }
-        if (verifica = 0)
-            printf("%s: no such product", token);
+        if (verifica == 0)
+            printf("%s"NO_PROD_ERR"\n", token);
         
         token = strtok(NULL, delimitadores);
     }
