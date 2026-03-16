@@ -463,7 +463,8 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     return;
 }
 
-void resumoFat(Produto tabela_produtos[], Cesto **cesto, IVA tabela_iva[], char linha[], int *num_prod, int *num_ivas){
+/*Função que imprime um resumo da faturação ao utilizador*/
+void resumoFat(Produto tabela_produtos[], IVA tabela_iva[], char linha[], int *num_prod, int *num_ivas, int total_itens_vendidos, int total_faturas, double valor_faturado){
     /*Resumo da Faturação (key = r)*/
     char comando, ean[EAN_MAX];
     int input = 0, indice, i = 0;
@@ -472,12 +473,12 @@ void resumoFat(Produto tabela_produtos[], Cesto **cesto, IVA tabela_iva[], char 
     /*Caso o utilizador não introduza argumentos */
     if (input == 1){
         /*num total itens comprados | numero total faturas emitidas | valor total faturado*/
-
+        printf("%d %d %.2f\n", total_itens_vendidos, total_faturas, valor_faturado);
         /*Imprimir a tabela de ivas*/
         for (i = 0; i < *num_ivas; i++){
-            printf("%d %c\n", 
-            tabela_iva[i].num,
-            tabela_iva[i].c);
+            printf("%c %d%%\n", 
+            tabela_iva[i].c,
+            tabela_iva[i].num);
         }
         return;
     } 
@@ -489,15 +490,18 @@ void resumoFat(Produto tabela_produtos[], Cesto **cesto, IVA tabela_iva[], char 
             puts(EAN_ERR);
             return;
         }
+        /*Obter o indice do produto*/
         indice = procuraProduto(tabela_produtos, *num_prod, ean);
 
+        /*Verificar se o produto existe*/
         if (indice == NAO_EXISTE){
             printf("%s"NO_PROD_ERR"\n", ean);
+            return;
         }
-
-        printf("%s %d %s\n", 
-            tabela_produtos[indice].ean,
+        /*Imprimir os dados sobre o produto*/
+        printf("%d %d %s\n", 
             tabela_produtos[indice].quantidade,
+            tabela_produtos[indice].vendido,
             tabela_produtos[indice].descricao
         );
         return;
@@ -637,15 +641,18 @@ int main(int num_palavras, char *lista_palavras[]){
     Fatura *lista_faturas = NULL;
     char input[STR_MAX]; /*Criar tabela para recolher o input*/
     double valor_total_faturado = 0.0;
-    int numero_produtos = 0, numero_ivas = 0, num_itens_cesto = 0, 
-        capacidade = 0, numero_faturas = 0, capacidade_faturas = 0;
-    int total_itens_vendidos = 0, faturas_emitidas = 0;
+    int numero_produtos = 0, numero_ivas = 0, num_itens_cesto = 0;
+    int capacidade = 0, numero_faturas = 0, capacidade_faturas = 0;
+    int total_itens_vendidos = 0;
 
     carregaIVA(num_palavras, lista_palavras, tabela_iva, &numero_ivas);
 
     while(fgets(input, STR_MAX, stdin)){
         switch(input[0]){
-            case 'q': free(cesto); return 0;
+            case 'q': 
+                free(cesto); 
+                free(lista_faturas); 
+                return 0;
             case 'p': 
                 addProduto(tabela_prod, &numero_produtos, input, 
                             tabela_iva, &numero_ivas);
@@ -658,8 +665,8 @@ int main(int num_palavras, char *lista_palavras[]){
                         &num_itens_cesto, tabela_iva, &numero_ivas, &capacidade);
                 break;
             case 'r': 
-                resumoFat(tabela_prod, &cesto, tabela_iva, input, 
-                            &numero_produtos, &numero_ivas);
+                resumoFat(tabela_prod, tabela_iva, input, &numero_produtos, &numero_ivas, 
+                        total_itens_vendidos, numero_faturas, valor_total_faturado);
                 break;
             case 'f': fatura(tabela_prod, &cesto, &lista_faturas, input, 
                             numero_produtos, &num_itens_cesto, &numero_faturas, 
