@@ -432,7 +432,8 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
             if (*capacidade == 0)
                 *capacidade = 2;
             /*Aumentar o tamanho do array "*cesto" para o dobro dos espaços*/
-            *cesto = realloc(*cesto, (*capacidade) * 2 * sizeof(Cesto));
+            (*capacidade) *= 2; /*Aumentar a capacidade*/
+            *cesto = realloc(*cesto, (*capacidade) * sizeof(Cesto)); /*Alocar memória*/
         }
         /*Inserir os dados no array cesto*/
         strcpy((*cesto)[*num_cesto].ean, ean);
@@ -598,7 +599,8 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
             *capacidade_fat += 2;
         }
         /*Realocar novo espaço de memória*/
-        *lista_faturas = realloc(*lista_faturas, (*capacidade_fat) * 2 * sizeof(Fatura));
+        (*capacidade_fat) *= 2; /*Atualizar a capacidade*/
+        *lista_faturas = realloc(*lista_faturas, (*capacidade_fat) * sizeof(Fatura)); /*Alocar espaço de memória*/
     }
 
     /*Guardar Fatura*/
@@ -649,10 +651,15 @@ int main(int num_palavras, char *lista_palavras[]){
 
     while(fgets(input, STR_MAX, stdin)){
         switch(input[0]){
-            case 'q': 
+            case 'q':{
+                int i;
+                /*Libertar a memória dos arrays dinâmicos*/
+                for (i = 0; i < numero_faturas; i++){
+                    free(lista_faturas[i].nome_cliente);
+                }
+                free(lista_faturas);
                 free(cesto); 
-                free(lista_faturas); 
-                return 0;
+                return 0;}
             case 'p': 
                 addProduto(tabela_prod, &numero_produtos, input, 
                             tabela_iva, &numero_ivas);
