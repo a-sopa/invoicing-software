@@ -34,14 +34,26 @@ typedef struct {
 } Produto;
 
 typedef struct {
-    char c;
     int num;
+    char c;
 } IVA;
 
 typedef struct {
+    double preco;
     int quantidade;
     char ean[EAN_MAX];
 } Cesto;
+
+typedef struct{
+    double valor;
+    int total_itens;
+    int faturas_emitidas;
+} Fatura;
+
+typedef struct{
+    int nif;
+    char nome;
+} Cliente;
 
 /*Função que cria a tabela dos ivas (com base num ficheiro ou default)*/
 void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], int *numero_ivas){
@@ -427,6 +439,8 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     }
     
     preco_com_iva = precoIVA(tabela_produtos, tabela_iva, indice_tabela, num_ivas, q_atual_cesto);
+    
+    (*cesto)[indice_cesto].preco = preco_com_iva;
 
     printf("%c %.2f %d %.2f %s\n", 
             tabela_produtos[indice_tabela].iva,
@@ -438,40 +452,48 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     return;
 }
 
-void resumoFat(Produto tabela_produtos[], char linha[], int *num_prod){
+void resumoFat(Produto tabela_produtos[], Cesto **cesto, IVA tabela_iva[], char linha[], int *num_prod, int *num_ivas){
     /*Resumo da Faturação (key = r)*/
     char comando, ean[EAN_MAX];
-    int input = 0, indice;
+    int input = 0, indice, i = 0;
     input = sscanf(linha, "%c %s", &comando, ean);
-
-    /*TESTES*/
-    if (testaEAN(ean)){
-        puts(EAN_ERR);
-        return;
-    }
-
-    indice = procuraProduto(tabela_produtos, *num_prod, ean);
-
-    if (indice == NAO_EXISTE){
-        printf("%s"NO_PROD_ERR"\n", ean);
-    }
 
     /*Caso o utilizador não introduza argumentos */
     if (input == 1){
+        /*num total itens comprados | numero total faturas emitidas | valor total faturado*/
+
+        /*Imprimir a tabela de ivas*/
+        for (i = 0; i < *num_ivas; i++){
+            printf("%d %c\n", 
+            tabela_iva[i].num,
+            tabela_iva[i].c);
+        }
         return;
-    }
+    } 
+
     /*Caso o utilizador introduza argumentos*/
     else{
+        /*TESTES*/
+        if (testaEAN(ean)){
+            puts(EAN_ERR);
+            return;
+        }
+        indice = procuraProduto(tabela_produtos, *num_prod, ean);
+
+        if (indice == NAO_EXISTE){
+            printf("%s"NO_PROD_ERR"\n", ean);
+        }
+
         printf("%s %d %s\n", 
             tabela_produtos[indice].ean,
             tabela_produtos[indice].quantidade,
             tabela_produtos[indice].descricao
         );
         return;
-    }
+    }   
 }
 
-void fatura(){
+void fatura(Produto tabela_produto[], Cesto **cesto, IVA tabela_iva[], Cliente lista_clientes[]){
     /*Fatura os produtos no cesto (key = f)*/
     printf("Fatura\n");
 }
@@ -491,6 +513,7 @@ int main(int num_palavras, char *lista_palavras[]){
     Produto tabela_prod[PROD_MAX]; /*Criar a tabela de produtos*/
     IVA tabela_iva[IVA_MAX]; /*Criar a tabela com os valores de IVA*/
     Cesto *cesto = NULL; /*Criar a tabela com os espaços para os produtos no cesto*/
+    Cliente lista_clientes[STR_MAX];
     char input[STR_MAX]; /*Criar tabela para recolher o input*/
     int numero_produtos = 0, numero_ivas = 0, num_itens_cesto = 0, capacidade = 0;
 
@@ -502,8 +525,8 @@ int main(int num_palavras, char *lista_palavras[]){
             case 'p': addProduto(tabela_prod, &numero_produtos, input, tabela_iva, &numero_ivas); break;
             case 'l': listaProduto(tabela_prod, &numero_produtos, input); break;
             case 'a': addCesto(tabela_prod, &numero_produtos, input, &cesto, &num_itens_cesto, tabela_iva, &numero_ivas, &capacidade); break;
-            case 'r': resumoFat(tabela_prod, input, &numero_produtos); break;
-            case 'f': fatura(); break;
+            case 'r': resumoFat(tabela_prod, &cesto, tabela_iva, input, &numero_produtos, &numero_ivas); break;
+            case 'f': fatura(tabela_prod, &cesto, tabela_iva, lista_clientes); break;
             case 'c': listaFat(); break;
             case 'd': apagaRegisto(); break;
             default: break;
