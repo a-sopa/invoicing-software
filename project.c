@@ -23,6 +23,8 @@
 #define PROD_ERR "invalid product" /* Erro: */
 #define NO_PROD_ERR ": no such product" /*Erro: produto não encontrado*/
 #define NO_STOCK_ERR "no stock" /*Erro: não existe stock*/
+#define NO_NIF_ERR ": no such nif" /*Erro: NIF inválido*/
+#define NAME_ERR "invalid name" /*Erro: nome inválido*/
 
 typedef struct {
     double preco; 
@@ -45,9 +47,11 @@ typedef struct {
 } Cesto;
 
 typedef struct{
-    double valor;
+    double valor_total;
+    int id_fatura;
     int total_itens;
-    int faturas_emitidas;
+    int nif;
+    char *nome_cliente;
 } Fatura;
 
 typedef struct{
@@ -264,7 +268,7 @@ void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
             if (tabela_produtos[i].quantidade > 0){
                 imprimeProduto(i, tabela_produtos);
                 /*Atualizar a variável de verificação*/
-                verifica = 1;
+                verifica = EXISTE;
             }
         }
         if (verifica == 0)
@@ -279,7 +283,7 @@ void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
             if (tabela_produtos[i].quantidade > 0 && testaToken(token, tabela_produtos[i].ean)){
                 imprimeProduto(i, tabela_produtos);
                 /*Atualizar a variável de verificação*/
-                verifica = 1;
+                verifica = EXISTE;
             }
         }
         if (verifica == 0)
@@ -316,7 +320,7 @@ double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int *nu
     return preco * quant * (1.0 + (valor_iva / 100.0));
 }
 
-/*Função para */
+/*Função para adicionar produtos ao cesto*/
 void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **cesto, int *num_cesto, IVA tabela_iva[], int *num_ivas, int *capacidade){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
     int quant = 0, input = 0, indice_tabela, i, j, quant_cesto = 0, indice_cesto = NAO_EXISTE, q_atual_cesto = 0;
@@ -440,7 +444,14 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     
     preco_com_iva = precoIVA(tabela_produtos, tabela_iva, indice_tabela, num_ivas, q_atual_cesto);
     
-    (*cesto)[indice_cesto].preco = preco_com_iva;
+    if (indice_cesto == NAO_EXISTE){
+        /*Se o item for novo no cesto é necessário guardá-lo no indice correspondente*/
+        (*cesto)[*num_cesto-1].preco = preco_com_iva;
+    }
+    else{
+        /*Se o produto já existia, basta apenas atualizar o valor do indice*/
+        (*cesto)[indice_cesto].preco = preco_com_iva;
+    }
 
     printf("%c %.2f %d %.2f %s\n", 
             tabela_produtos[indice_tabela].iva,
@@ -493,9 +504,119 @@ void resumoFat(Produto tabela_produtos[], Cesto **cesto, IVA tabela_iva[], char 
     }   
 }
 
-void fatura(Produto tabela_produto[], Cesto **cesto, IVA tabela_iva[], Cliente lista_clientes[]){
+void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, char linha[], int num_prod, int *num_cesto, int *num_faturas, int *capacidade_fat, int *total_itens, double *total_valor){
     /*Fatura os produtos no cesto (key = f)*/
-    printf("Fatura\n");
+    char nif_str[STR_MAX] = "999999999";
+    char nome[STR_MAX] = "Cliente final";
+    int i = 1; /* Começa no indíce 1 para ignorar o f*/
+    int j, total_itens_fatura = 0, nif_num;
+    double valor_fatura = 0.0;
+
+    /*Encontrar os inputs corretos*/
+
+    while (isspace(linha[i])){
+        i++; /*Incrementar o i até encontrar algo que não seja espaço*/
+    }
+    /*Verificar se o input tem algum valor*/
+    if (linha[i] != '\0'){
+        /*Se o primeiro valor for um dígito será um nif*/
+        if (isdigit(linha[i])) {
+            sscanf(&linha[i], "%s", nif_str);
+            i += strlen(nif_str);
+        }
+        while (isspace(linha[i])){
+            i++;
+        }
+
+        /*Verificar o resto do input*/
+        if (linha[i] != '\0'){
+            /*Caso o primeiro caractér seja uma aspa (")*/
+            if (linha[i] == '"'){
+                i++; /*Andar um espaço*/
+                int k = 0;
+                while (linha[i] != '"' && linha[i] != '\0'){
+                    nome[k] = linha[i];
+                    k++;
+                    i++;
+                }
+                nome[k] = '\0'; /*Fechar a string*/
+            }
+        }
+        else{
+            /*Caso o nome não esteja delimitado por aspas*/
+            strcpy(nome, &linha[i]);
+
+            /*Limpar o fim da string*/
+            int len = strlen(nome);
+            if (len > 0 && nome[len-1] == '\n')
+                nome[len-1] = '\0';
+        }
+    }
+    /*TESTES*/
+    /*O NIF tem de ter obrigatoriamente 9 dígitos*/
+    if (strlen(nif_str) != 9){
+        printf("%s"NO_NIF_ERR"\n", nif_str);
+        return;
+    }
+    /*"Converter" o NIF para inteiro*/
+    nif_num = atoi(nif_str);
+
+    /*O primeiro elemento do nome de cliente tem de ser uma letra*/
+    if (!isalpha(nome[0])){
+        puts(NAME_ERR);
+        return;
+    }
+
+    /*Caso o nome seja "error"*/
+    if (strcmp(nome, "error") == 0){
+        for (j = 0; j < *num_cesto; j++){
+            /*Procurar o indice do produto na tabela*/
+            int id_prod = procuraProduto(tabela_produtos, num_prod, (*cesto)[j].ean);
+            if (id_prod != NAO_EXISTE){
+                tabela_produtos[id_prod].vendido -= (*cesto)[j].quantidade; /*Remover as vendas*/
+                tabela_produtos[id_prod].quantidade += (*cesto)[j].quantidade; /*Repor o stock*/
+            }
+        }
+        /*Reiniciar o contador de itens no cesto*/
+        (*num_cesto) = 0;
+        return;
+    }
+
+    /*Calcular os valores totais*/
+    for (i = 0; i < *num_cesto; i++){
+        total_itens_fatura += (*cesto)[i].quantidade;
+        valor_fatura += (*cesto)[i].preco;
+    }
+
+    /*Reservar memória*/
+    if (*num_faturas >= *capacidade_fat){
+        if (*capacidade_fat == 0){
+            *capacidade_fat += 2;
+        }
+        /*Realocar novo espaço de memória*/
+        *lista_faturas = realloc(*lista_faturas, (*capacidade_fat) * 2 * sizeof(Fatura));
+    }
+
+    /*Guardar Fatura*/
+    (*lista_faturas)[*num_faturas].nif = nif_num; /*Guardar NIF*/
+
+    /*Reservar espaço de memória para o nome cliente*/
+    (*lista_faturas)[*num_faturas].nome_cliente = malloc(strlen(nome) + 1); 
+    strcpy((*lista_faturas)[*num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
+
+    (*lista_faturas)[*num_faturas].total_itens = total_itens_fatura; /*Guardar o numero total de itens na fatura*/
+    (*lista_faturas)[*num_faturas].valor_total = valor_fatura; /*Guardar o valor monetário da fatura*/
+    (*lista_faturas)[*num_faturas].id_fatura = *num_faturas + 1; /*Atualizar o id da fatura*/
+
+    /*Atualizar variáveis globais*/
+    *total_itens += total_itens_fatura; /*Atualizar o total de itens em faturas*/
+    *total_valor += valor_fatura; /*Atualizar o valor total monetário em faturas*/
+
+    /*Emitir Fatura*/
+    printf("%d %.2f %d\n", total_itens_fatura, valor_fatura, (*num_faturas) + 1);
+
+    (*num_faturas)++;
+    return;
 }
 
 void listaFat(){
@@ -513,20 +634,37 @@ int main(int num_palavras, char *lista_palavras[]){
     Produto tabela_prod[PROD_MAX]; /*Criar a tabela de produtos*/
     IVA tabela_iva[IVA_MAX]; /*Criar a tabela com os valores de IVA*/
     Cesto *cesto = NULL; /*Criar a tabela com os espaços para os produtos no cesto*/
-    Cliente lista_clientes[STR_MAX];
+    Fatura *lista_faturas = NULL;
     char input[STR_MAX]; /*Criar tabela para recolher o input*/
-    int numero_produtos = 0, numero_ivas = 0, num_itens_cesto = 0, capacidade = 0;
+    double valor_total_faturado = 0.0;
+    int numero_produtos = 0, numero_ivas = 0, num_itens_cesto = 0, 
+        capacidade = 0, numero_faturas = 0, capacidade_faturas = 0;
+    int total_itens_vendidos = 0, faturas_emitidas = 0;
 
     carregaIVA(num_palavras, lista_palavras, tabela_iva, &numero_ivas);
 
     while(fgets(input, STR_MAX, stdin)){
         switch(input[0]){
             case 'q': free(cesto); return 0;
-            case 'p': addProduto(tabela_prod, &numero_produtos, input, tabela_iva, &numero_ivas); break;
-            case 'l': listaProduto(tabela_prod, &numero_produtos, input); break;
-            case 'a': addCesto(tabela_prod, &numero_produtos, input, &cesto, &num_itens_cesto, tabela_iva, &numero_ivas, &capacidade); break;
-            case 'r': resumoFat(tabela_prod, &cesto, tabela_iva, input, &numero_produtos, &numero_ivas); break;
-            case 'f': fatura(tabela_prod, &cesto, tabela_iva, lista_clientes); break;
+            case 'p': 
+                addProduto(tabela_prod, &numero_produtos, input, 
+                            tabela_iva, &numero_ivas);
+                break;
+            case 'l': 
+                listaProduto(tabela_prod, &numero_produtos, input); 
+                break;
+            case 'a': 
+                addCesto(tabela_prod, &numero_produtos, input, &cesto, 
+                        &num_itens_cesto, tabela_iva, &numero_ivas, &capacidade);
+                break;
+            case 'r': 
+                resumoFat(tabela_prod, &cesto, tabela_iva, input, 
+                            &numero_produtos, &numero_ivas);
+                break;
+            case 'f': fatura(tabela_prod, &cesto, &lista_faturas, input, 
+                            numero_produtos, &num_itens_cesto, &numero_faturas, 
+                            &capacidade_faturas, &total_itens_vendidos, &valor_total_faturado); 
+                break;
             case 'c': listaFat(); break;
             case 'd': apagaRegisto(); break;
             default: break;
