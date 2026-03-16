@@ -25,6 +25,7 @@
 #define NO_STOCK_ERR "no stock" /*Erro: não existe stock*/
 #define NO_NIF_ERR ": no such nif" /*Erro: NIF inválido*/
 #define NAME_ERR "invalid name" /*Erro: nome inválido*/
+#define NO_CL_ERR ": no such client" /*Erro: Cliente inexistente*/
 
 typedef struct {
     double preco; 
@@ -509,6 +510,40 @@ void resumoFat(Produto tabela_produtos[], IVA tabela_iva[], char linha[], int *n
     }   
 }
 
+void extraiNome(char linha[], int indice_i, char nome_final[]){
+    int i = indice_i;
+    int p = 0;
+    
+    while (isspace(linha[i])){
+        i++; /*Incrementar o i até encontrar algo que não seja espaço*/
+    }
+    /*A linha não tem argumentos*/
+    if (linha[i] != '\0'){
+        nome_final[0] = '\0';
+        return;
+        }
+
+    /*Caso o primeiro caractér seja uma aspa (")*/
+    if (linha[i] == '"'){
+        i++; /*Andar um espaço*/
+        while (linha[i] != '"' && linha[i] != '\0'){
+            nome_final[p] = linha[i];
+            p++;
+            i++;
+        }
+        nome_final[p] = '\0'; /*Fechar a string*/
+    }
+        else{
+            /*Caso o nome não esteja delimitado por aspas*/
+            strcpy(nome_final, &linha[i]);
+
+            /*Limpar o fim da string*/
+            int len = strlen(nome_final);
+            if (len > 0 && nome_final[len-1] == '\n')
+                nome_final[len-1] = '\0';
+        }
+    }
+
 void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, char linha[], int num_prod, int *num_cesto, int *num_faturas, int *capacidade_fat, int *total_itens, double *total_valor){
     /*Fatura os produtos no cesto (key = f)*/
     char nif_str[STR_MAX] = "999999999";
@@ -529,34 +564,9 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
             sscanf(&linha[i], "%s", nif_str);
             i += strlen(nif_str);
         }
-        while (isspace(linha[i])){
-            i++;
-        }
-
-        /*Verificar o resto do input*/
-        if (linha[i] != '\0'){
-            /*Caso o primeiro caractér seja uma aspa (")*/
-            if (linha[i] == '"'){
-                i++; /*Andar um espaço*/
-                int k = 0;
-                while (linha[i] != '"' && linha[i] != '\0'){
-                    nome[k] = linha[i];
-                    k++;
-                    i++;
-                }
-                nome[k] = '\0'; /*Fechar a string*/
-            }
-        }
-        else{
-            /*Caso o nome não esteja delimitado por aspas*/
-            strcpy(nome, &linha[i]);
-
-            /*Limpar o fim da string*/
-            int len = strlen(nome);
-            if (len > 0 && nome[len-1] == '\n')
-                nome[len-1] = '\0';
-        }
     }
+    /*Chamar a função auxiliar para extrair o nome*/
+    extraiNome(linha, i, nome);
     /*TESTES*/
     /*O NIF tem de ter obrigatoriamente 9 dígitos*/
     if (strlen(nif_str) != 9){
@@ -625,16 +635,53 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
     return;
 }
 
-void listaFat(){
+void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
     /*Lista as faturas do sistema (key = c)*/
-    printf("Lista as faturas\n");    
+    char nome[DESC_MAX];
+    int input, i, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
+
+    /*Utilizar a função auxiliar para extrair o nome*/
+    extraiNome(linha, 1, nome);
+
+    /*Verificar se a função tem realmente nome*/
+    if (strlen(nome) > 0){
+        argumento = EXISTE;
+    }
+
+    /*Caso o utilizador tenha inserido o nome como argumento*/
+    if (argumento == EXISTE){
+        /*TESTES*/
+        if (!isalpha(nome[0])){
+        puts(NAME_ERR);
+        return;
+        }
+        /*Procurar o cliente na lista de faturação*/
+        for (i = 0; i < num_faturas; i++){
+            if (strcmp(lista_faturas[i].nome_cliente, nome) == 0){
+                printf("%d %.2f %s\n", 
+                        lista_faturas[i].id_fatura,
+                        lista_faturas[i].valor_total,
+                        lista_faturas[i].nome_cliente);
+                validacao = EXISTE;
+            }
+        }
+        /*Verificar se o cliente existe*/
+        if (validacao == NAO_EXISTE){
+            printf("%s"NO_CL_ERR"\n", nome);
+            return;
+        }
+    }
+    else {
+        
+    }
+
+    return;    
 }
 
 void apagaRegisto(){
     /*Apaga o registo de um produto ou fatura (key = d)*/
     printf("Apaga o Registo\n");
 }
-
 
 int main(int num_palavras, char *lista_palavras[]){
     Produto tabela_prod[PROD_MAX]; /*Criar a tabela de produtos*/
@@ -679,7 +726,7 @@ int main(int num_palavras, char *lista_palavras[]){
                             numero_produtos, &num_itens_cesto, &numero_faturas, 
                             &capacidade_faturas, &total_itens_vendidos, &valor_total_faturado); 
                 break;
-            case 'c': listaFat(); break;
+            case 'c': listaFat(lista_faturas, input, numero_faturas); break;
             case 'd': apagaRegisto(); break;
             default: break;
         }
