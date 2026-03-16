@@ -638,7 +638,7 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
 void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
     /*Lista as faturas do sistema (key = c)*/
     char nome[DESC_MAX];
-    int input, i, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
+    int i, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
 
     /*Utilizar a função auxiliar para extrair o nome*/
     extraiNome(linha, 1, nome);
@@ -672,7 +672,7 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
         }
     }
     else {
-        
+
     }
 
     return;    
