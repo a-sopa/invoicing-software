@@ -61,6 +61,7 @@ typedef struct{
     char nome;
 } Cliente;
 
+/*Função auxiliar para o arredondamento de floats*/
 double arredonda2(double preco){
     int centimos, i;
     double preco_final, multiplicador = 1.0;
@@ -590,7 +591,7 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
 void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, char linha[], int num_prod, int *num_cesto, int *num_faturas, int *capacidade_fat, int *total_itens, double *total_valor){
     /*Fatura os produtos no cesto (key = f)*/
     char nif_str[STR_MAX] = "999999999";
-    char nome[STR_MAX] = "Cliente final";
+    char nome[STR_MAX];
     int i = 1; /* Começa no indíce 1 para ignorar o f*/
     int j, total_itens_fatura = 0, nif_num;
     double valor_fatura = 0.0;
@@ -610,6 +611,11 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
     }
     /*Chamar a função auxiliar para extrair o nome*/
     extraiNome(linha, i, nome);
+
+    if (strlen(nome) == 0 && strcmp(nif_str, "999999999") == 0){
+        strcpy(nome, "Cliente Final");
+    }
+
     /*TESTES*/
     /*O NIF tem de ter obrigatoriamente 9 dígitos*/
     if (strlen(nif_str) != 9){
