@@ -694,7 +694,9 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
         }
     }
     /*Listar todas as faturas por ordem:
-        1.ª */
+        1.ª Alfabeticamente
+        2.ª Cronologicamente*/
+    
 
     return;    
 }
