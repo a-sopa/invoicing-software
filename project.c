@@ -172,11 +172,11 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
 
     /*Inicializar variáveis*/
     char comando, ean[EAN_MAX], iva, descricao[STR_MAX];
-    float preco;
+    double preco;
     int quantidade, i;
 
     /*Obter o resto da linha*/
-    sscanf(linha, " %c %s %c %f %d %[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
+    sscanf(linha, " %c %s %c %lf %d %[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
      
     /*TESTES*/
     if (testaEAN(ean)){
@@ -653,6 +653,7 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
     printf("%d %.2f %d\n", total_itens_fatura, valor_fatura, (*num_faturas) + 1);
 
     (*num_faturas)++;
+    (*num_cesto) = 0; /*Esvaziar o cesto*/
     return;
 }
 
@@ -692,11 +693,8 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
             return;
         }
     }
-    else {
-        /*Insertion Sort*/
-        int j;
-        
-    }
+    /*Listar todas as faturas por ordem:
+        1.ª */
 
     return;    
 }
