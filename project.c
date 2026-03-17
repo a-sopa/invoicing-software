@@ -80,7 +80,24 @@ void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], i
             tabela_iva[*numero_ivas].num = valor;
             (*numero_ivas)++;
             }
-    fclose(ficheiro_ivas); /*Fechar o ficheiro*/
+        fclose(ficheiro_ivas); /*Fechar o ficheiro*/
+        
+        /*Ordenar os IVAS por ordem alfabética
+                ***Insertion Sort***      */
+        int i, j;
+        IVA temp;
+        
+        for (i = 1; i < *numero_ivas; i++){
+            temp = tabela_iva[i];
+            j = i - 1;
+
+            while (j >= 0 && tabela_iva[j].c > temp.c){
+                tabela_iva[j+1] = tabela_iva[j];
+                j--;
+            }
+            tabela_iva[j+1] = temp;
+        }
+        return;
     }
     else{
         /*Caso não tenha sido inserido nenhum ficheiro*/
