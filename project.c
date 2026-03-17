@@ -10,6 +10,7 @@
 #define PROD_MAX 10000 /* Número máx de produtos*/
 #define IVA_MAX 26 /* Número máx de taxas de IVA */
 #define CONVERSAO '0' /* Constante de conversão de char para int (dígitos)*/
+#define CASAS 2 /*Número de casas decimais restantes de arredondamentos*/
 
 #define NAO_EXISTE -1 /*Estado para a não existência de um item num array*/
 #define EXISTE 1 /*Estado para a existência de um item num array*/
@@ -59,6 +60,20 @@ typedef struct{
     int nif;
     char nome;
 } Cliente;
+
+double arredonda2(double preco){
+    int centimos, i;
+    double preco_final, multiplicador = 1.0;
+
+    for (i = 0; i < CASAS; i++){
+        multiplicador *= 10.0;
+    }
+
+    centimos = (int)(preco * multiplicador + 0.5);
+    preco_final = centimos / 100.0;
+
+    return preco_final;
+}
 
 /*Função que cria a tabela dos ivas (com base num ficheiro ou default)*/
 void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], int *numero_ivas){
@@ -347,7 +362,7 @@ double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int *nu
     }
 
     /*Calcular o preco dos produtos com a taxa de iva correspondente*/
-    return preco * quant * (1.0 + (valor_iva / 100.0));
+    return arredonda2(preco * quant * (1.0 + (valor_iva / 100.0)));
 }
 
 /*Função para adicionar produtos ao cesto*/
@@ -356,16 +371,15 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     int quant = 0, input = 0, indice_tabela, i, j, quant_cesto = 0, indice_cesto = NAO_EXISTE, q_atual_cesto = 0;
     char comando, ean[EAN_MAX], arg1[EAN_MAX], arg2[EAN_MAX]; 
     double preco_com_iva;
+    Cesto temp;
     
     input = sscanf(linha, " %c %s %s", &comando, arg1, arg2);
 
     if (input == 1){
-        Cesto temp;
         /*InsertionSort*/
         for (i = 1; i < *num_cesto; i++){
             temp = (*cesto)[i];
             j = i - 1;
-            
             /*Verifica se a string da esquerda é maior do que a da direita*/
             while (j >= 0 && strcmp((*cesto)[j].ean, temp.ean) > 0){
                 /*Trocar de posições*/
@@ -484,7 +498,7 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
         (*cesto)[indice_cesto].preco = preco_com_iva;
     }
 
-    printf("%c %.2f %d %.2f %s\n", 
+    printf("%c %.2f %d %.2lf %s\n", 
             tabela_produtos[indice_tabela].iva,
             tabela_produtos[indice_tabela].preco,
             q_atual_cesto,
