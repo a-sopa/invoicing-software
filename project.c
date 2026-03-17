@@ -153,8 +153,10 @@ int testaIVA(char iva, IVA tabela_iva[], int *numero_ivas){
 /*Função auxiliar para testar a validade da descrição*/
 int testaDescricao(char descricao[]){
     /*Verifica se começa com maiuscula*/
+    unsigned char primeira = (unsigned char)descricao[0];
     if (descricao[0] < 'A' || descricao[0] > 'Z')
-        return 1;
+        if (primeira <= 128)
+            return 1;
 
     /*Verifica se a descricao tem menos de 50 bytes*/
     if (strlen(descricao) >= DESC_MAX)
