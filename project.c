@@ -70,7 +70,7 @@ double arredonda2(double preco){
         multiplicador *= 10.0;
     }
 
-    centimos = (int)(preco * multiplicador + 0.5);
+    centimos = (int)(preco * multiplicador + 0.5 + 1e-9);
     preco_final = centimos / 100.0;
 
     return preco_final;
