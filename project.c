@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #define EAN_MAX 14 /* Número máx de caracteres do EAN */
-#define DESC_MAX 101 /* Número máx de caracteres da descrição*/
+#define DESC_MAX 51 /* Número máx de caracteres da descrição*/
 #define STR_MAX 65536 /* Número máx de caracteres das strings*/
 #define PROD_MAX 10000 /* Número máx de produtos*/
 #define IVA_MAX 26 /* Número máx de taxas de IVA */
@@ -159,7 +159,7 @@ int testaDescricao(char descricao[]){
             return 1;
 
     /*Verifica se a descricao tem menos de 50 bytes*/
-    if (strlen(descricao) >= 51)
+    if (strlen(descricao) >= DESC_MAX)
         return 1;
 
     return 0;
@@ -210,7 +210,7 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
         if (strcmp(tabela_prod[i].ean, ean) == 0){
             /*Atualizar o stock*/
             tabela_prod[i].preco = preco;
-            tabela_prod[i].quantidade = quantidade;
+            tabela_prod[i].quantidade += quantidade;
             tabela_prod[i].iva = iva;
             strcpy(tabela_prod[i].descricao, descricao);
             printf("%d\n", quantidade);
@@ -693,7 +693,9 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
         }
     }
     else {
-
+        /*Insertion Sort*/
+        int j;
+        
     }
 
     return;    
