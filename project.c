@@ -669,7 +669,7 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
     /*Lista as faturas do sistema (key = c)*/
     char nome[DESC_MAX];
     int i, j, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
-    Fatura *copia;
+    Fatura *copia, temp;
 
     /*Utilizar a função auxiliar para extrair o nome*/
     extraiNome(linha, 1, nome);
@@ -707,6 +707,30 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
         1.ª Alfabeticamente
         2.ª Cronologicamente*/
         copia = malloc(num_faturas * sizeof(Fatura));
+
+        /*Copiar as faturas*/
+        for (i = 0; i < num_faturas; i++){
+            copia[i] = lista_faturas[i];
+        }
+
+        /*Insertion Sort por ordem alfabética*/
+        for (i = 1; i < num_faturas; i++){
+            j = i - 1;
+            temp = copia[i];
+            while (j >= 0 && strcmp(copia[j].nome_cliente, temp.nome_cliente) > 0){
+                copia[j+1] = copia[j];
+                j--;
+            }
+            copia[j+1] = temp;
+        }
+        for (i = 0; i < num_faturas; i++){
+            printf("%d %.2f %s\n", 
+                copia[i].id_fatura,
+                copia[i].valor_total,
+                copia[i].nome_cliente);
+        }
+        
+        free(copia);
     }
     return;    
 }
