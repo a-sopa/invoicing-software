@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #define EAN_MAX 14 /* Número máx de caracteres do EAN */
-#define DESC_MAX 51 /* Número máx de caracteres da descrição*/
+#define DESC_MAX 101 /* Número máx de caracteres da descrição*/
 #define STR_MAX 65536 /* Número máx de caracteres das strings*/
 #define PROD_MAX 10000 /* Número máx de produtos*/
 #define IVA_MAX 26 /* Número máx de taxas de IVA */
@@ -159,7 +159,7 @@ int testaDescricao(char descricao[]){
             return 1;
 
     /*Verifica se a descricao tem menos de 50 bytes*/
-    if (strlen(descricao) >= DESC_MAX)
+    if (strlen(descricao) >= 51)
         return 1;
 
     return 0;
