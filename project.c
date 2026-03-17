@@ -298,6 +298,8 @@ void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
     }
 
     while (token != NULL){
+        /*Reiniciar a variável*/
+        verifica = 0;
         for (i = 0; i < *num; i++){
             /*Verifica se existe stock e se o EAN corresponde ao token*/
             if (tabela_produtos[i].quantidade > 0 && testaToken(token, tabela_produtos[i].ean)){
