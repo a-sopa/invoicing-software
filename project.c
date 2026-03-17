@@ -220,7 +220,7 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
         tabela_prod[i].quantidade += quantidade;
         tabela_prod[i].iva = iva;
         strcpy(tabela_prod[i].descricao, descricao);
-        printf("%d\n", quantidade);
+        printf("%d\n", tabela_prod[i].quantidade);
         return 0;
         }       
     }  
@@ -547,7 +547,7 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
         i++; /*Incrementar o i até encontrar algo que não seja espaço*/
     }
     /*A linha não tem argumentos*/
-    if (linha[i] != '\0'){
+    if (linha[i] == '\0'){
         nome_final[0] = '\0';
         return;
         }
@@ -668,7 +668,8 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
 void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
     /*Lista as faturas do sistema (key = c)*/
     char nome[DESC_MAX];
-    int i, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
+    int i, j, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
+    Fatura *copia;
 
     /*Utilizar a função auxiliar para extrair o nome*/
     extraiNome(linha, 1, nome);
@@ -701,10 +702,12 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
             return;
         }
     }
+    else{
     /*Listar todas as faturas por ordem:
         1.ª Alfabeticamente
         2.ª Cronologicamente*/
-    
+        copia = malloc(num_faturas * sizeof(Fatura));
+    }
     return;    
 }
 
