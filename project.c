@@ -206,27 +206,25 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
     }
     for (i = 0; i < *num; i++){
         if(strcmp(tabela_prod[i].ean, ean) == 0){
-            /*Verificar se o produto está no cesto*/
-            for (j = 0; j < *num_cesto; j++){
-                if (strcmp((*cesto)[j].ean, ean) == 0){
-                    puts(PROD_IN_USE_ERR);
-                    return 0;
+            /*Verificar se o preço do cesto é igual ao introduzido*/
+            if (tabela_prod[i].preco != preco){
+                for (j = 0; j < *num_cesto; j++){
+                    if (strcmp((*cesto)[j].ean, ean) == 0){
+                        puts(PROD_IN_USE_ERR);
+                        return 0;
+                    }
                 }
-            }
         }
-    }    
-    /*Verificar se o produto já existe na tabela de produtos*/
-    for (i = 0; i < *num; i++){
-        if (strcmp(tabela_prod[i].ean, ean) == 0){
-            /*Atualizar o stock*/
-            tabela_prod[i].preco = preco;
-            tabela_prod[i].quantidade += quantidade;
-            tabela_prod[i].iva = iva;
-            strcpy(tabela_prod[i].descricao, descricao);
-            printf("%d\n", quantidade);
-            return 0;
-        }
-    }
+        /*Atualizar o stock*/
+        tabela_prod[i].preco = preco;
+        tabela_prod[i].quantidade += quantidade;
+        tabela_prod[i].iva = iva;
+        strcpy(tabela_prod[i].descricao, descricao);
+        printf("%d\n", quantidade);
+        return 0;
+        }       
+    }  
+
     /*TESTE*/
     if (*num >= PROD_MAX){
         /*A quantidade de produtos excede o máximo*/
