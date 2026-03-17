@@ -70,7 +70,7 @@ double arredonda2(double preco){
         multiplicador *= 10.0;
     }
 
-    centimos = (int)(preco * multiplicador + 0.5 + 1e-9);
+    centimos = (long long)(preco * multiplicador + 0.5 + 1e-9);
     preco_final = centimos / 100.0;
 
     return preco_final;
@@ -626,7 +626,7 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
     extraiNome(linha, i, nome);
 
     if (strlen(nome) == 0 && strcmp(nif_str, "999999999") == 0){
-        strcpy(nome, "Cliente Final");
+        strcpy(nome, "Cliente final");
     }
 
     /*TESTES*/
@@ -758,6 +758,7 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
             }
             copia[j+1] = temp;
         }
+        /*Apresentar as faturas*/
         for (i = 0; i < num_faturas; i++){
             printf("%d %.2f %s\n", 
                 copia[i].id_fatura,
