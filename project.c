@@ -372,41 +372,48 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     int quant = 0, input = 0, indice_tabela, i, j, quant_cesto = 0, indice_cesto = NAO_EXISTE, q_atual_cesto = 0;
     char comando, ean[EAN_MAX], arg1[EAN_MAX], arg2[EAN_MAX]; 
     double preco_com_iva;
-    Cesto temp;
+    Cesto temp, *cesto_ordenado;
     
     input = sscanf(linha, " %c %s %s", &comando, arg1, arg2);
 
     if (input == 1){
         /*InsertionSort*/
+        cesto_ordenado = malloc(*num_cesto * sizeof(Cesto)); /*Criar uma cópia para ordenar o cesto*/
+        
+        for (i = 0; i < *num_cesto; i++){
+            cesto_ordenado[i] = (*cesto)[i];
+        }
+
         for (i = 1; i < *num_cesto; i++){
-            temp = (*cesto)[i];
+            temp = cesto_ordenado[i];
             j = i - 1;
             /*Verifica se a string da esquerda é maior do que a da direita*/
-            while (j >= 0 && strcmp((*cesto)[j].ean, temp.ean) > 0){
+            while (j >= 0 && strcmp(cesto_ordenado[j].ean, temp.ean) > 0){
                 /*Trocar de posições*/
-                (*cesto)[j+1] = (*cesto)[j];
+                cesto_ordenado[j+1] = cesto_ordenado[j];
                 j--;
             }
             /*Inserir o item temp na posição certa*/
-            (*cesto)[j+1] = temp;
+            cesto_ordenado[j+1] = temp;
         }
 
         for (i = 0; i < *num_cesto; i++){
             /*Obter o indice do produto*/
-            indice_tabela = procuraProduto(tabela_produtos, *num_prod, (*cesto)[i].ean);
+            indice_tabela = procuraProduto(tabela_produtos, *num_prod, cesto_ordenado[i].ean);
 
             /*Caso o indice exista calcular o preco com IVA*/
             if (indice_tabela != NAO_EXISTE){
-                preco_com_iva = precoIVA(tabela_produtos, tabela_iva, indice_tabela, num_ivas, (*cesto)[i].quantidade);
+                preco_com_iva = precoIVA(tabela_produtos, tabela_iva, indice_tabela, num_ivas, cesto_ordenado[i].quantidade);
                 /*Apresentar as informações*/
                 printf("%c %.2f %d %.2f %s\n", 
                 tabela_produtos[indice_tabela].iva,
                 tabela_produtos[indice_tabela].preco,
-                (*cesto)[i].quantidade,
+                cesto_ordenado[i].quantidade,
                 preco_com_iva,
                 tabela_produtos[indice_tabela].descricao);
             }
         }
+        free(cesto_ordenado); /*Libertar a memória do cesto_ordenado*/
         return;
     }
     else if (input == 2){
@@ -575,6 +582,12 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
             p++;
             i++;
         }
+        /*Caso o utilizador não tenha fechado aspas*/
+        if (linha[i] == '\0'){
+            /*Invalidar a string*/
+            strcpy(nome_final, "!");
+            return;
+        }
         nome_final[p] = '\0'; /*Fechar a string*/
     }
         else{
@@ -618,7 +631,7 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
 
     /*TESTES*/
     /*O NIF tem de ter obrigatoriamente 9 dígitos*/
-    if (strlen(nif_str) != 9){
+    if (strlen(nif_str) != 9 || nif_str[0] == '0'){
         printf("%s"NO_NIF_ERR"\n", nif_str);
         return;
     }
@@ -648,8 +661,10 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
 
     /*Calcular os valores totais*/
     for (i = 0; i < *num_cesto; i++){
-        total_itens_fatura += (*cesto)[i].quantidade;
-        valor_fatura += (*cesto)[i].preco;
+        if ((*cesto)[i].quantidade > 0){
+            total_itens_fatura += (*cesto)[i].quantidade;
+            valor_fatura += (*cesto)[i].preco;
+        }
     }
 
     /*Reservar memória*/
