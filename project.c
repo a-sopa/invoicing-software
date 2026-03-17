@@ -166,14 +166,14 @@ int testaDescricao(char descricao[]){
 }
 
 /*Função para adicionar o produto à tabela de produtos*/
-int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], int *numero_ivas){ 
+int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], int *numero_ivas, Cesto **cesto, int *num_cesto){ 
     /*Introduz um novo produto no sistema (key = p)
       p <ean> <iva> <preco> <quantidade> <descricao>  */
 
     /*Inicializar variáveis*/
     char comando, ean[EAN_MAX], iva, descricao[STR_MAX];
     double preco;
-    int quantidade, i;
+    int quantidade, i, j;
 
     /*Obter o resto da linha*/
     sscanf(linha, " %c %s %c %lf %d %[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
@@ -184,27 +184,37 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
         puts(EAN_ERR);
         return 0;
     }
-    else if (testaIVA(iva, tabela_iva, numero_ivas)){
+    if (testaIVA(iva, tabela_iva, numero_ivas)){
         /*O caracter do IVA é inválido*/
         puts(IVA_ERR);
         return 0;
     }
-    else if (preco <= 0){
+    if (preco <= 0){
         /*O preço é inferior/igual a 0*/
         puts(PRICE_ERR);
         return 0;
     }
-    else if (quantidade < 0){
+    if (quantidade < 0){
         /*A quantidade introduzida é negativa*/
         puts(QUANT_ERR);
         return 0;
     }
-    else if (testaDescricao(descricao)){
+    if (testaDescricao(descricao)){
         /*A descrição ultrapassa o tamanho máximo*/
         puts(DESC_ERR);
         return 0;
     }
-    
+    for (i = 0; i < *num; i++){
+        if(strcmp(tabela_prod[i].ean, ean) == 0){
+            /*Verificar se o produto está no cesto*/
+            for (j = 0; j < *num_cesto; j++){
+                if (strcmp((*cesto)[j].ean, ean) == 0){
+                    puts(PROD_IN_USE_ERR);
+                    return 0;
+                }
+            }
+        }
+    }    
     /*Verificar se o produto já existe na tabela de produtos*/
     for (i = 0; i < *num; i++){
         if (strcmp(tabela_prod[i].ean, ean) == 0){
@@ -697,7 +707,6 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
         1.ª Alfabeticamente
         2.ª Cronologicamente*/
     
-
     return;    
 }
 
@@ -732,7 +741,7 @@ int main(int num_palavras, char *lista_palavras[]){
                 return 0;}
             case 'p': 
                 addProduto(tabela_prod, &numero_produtos, input, 
-                            tabela_iva, &numero_ivas);
+                            tabela_iva, &numero_ivas, &cesto, &num_itens_cesto);
                 break;
             case 'l': 
                 listaProduto(tabela_prod, &numero_produtos, input); 
