@@ -63,7 +63,7 @@ typedef struct{
 
 /*Função auxiliar para o arredondamento de floats*/
 double arredonda2(double preco){
-    int centimos, i;
+    long long centimos, i;
     double preco_final, multiplicador = 1.0;
 
     for (i = 0; i < CASAS; i++){
