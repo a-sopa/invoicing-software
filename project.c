@@ -776,6 +776,7 @@ void apagaRegisto(){
     printf("Apaga o Registo\n");
 }
 
+//CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas
 int main(int num_palavras, char *lista_palavras[]){
     Produto tabela_prod[PROD_MAX]; /*Criar a tabela de produtos*/
     IVA tabela_iva[IVA_MAX]; /*Criar a tabela com os valores de IVA*/
