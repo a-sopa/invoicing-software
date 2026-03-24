@@ -21,12 +21,13 @@
 #define QUANT_ERR "invalid quantity" /* Erro: quantidade negativa*/
 #define DESC_ERR "invalid description" /* Erro: descrição demasiado longa*/
 #define PROD_IN_USE_ERR "product in use" /*Erro: produto em utilização*/
-#define PROD_ERR "invalid product" /* Erro: */
+#define PROD_ERR "invalid product" /* Erro: quantidade excedente*/
 #define NO_PROD_ERR ": no such product" /*Erro: produto não encontrado*/
 #define NO_STOCK_ERR "no stock" /*Erro: não existe stock*/
 #define NO_NIF_ERR ": no such nif" /*Erro: NIF inválido*/
 #define NAME_ERR "invalid name" /*Erro: nome inválido*/
 #define NO_CL_ERR ": no such client" /*Erro: Cliente inexistente*/
+#define NO_INVOICE ": no such invoice"
 
 typedef struct {
     double preco; 
@@ -60,6 +61,22 @@ typedef struct{
     int nif;
     char nome;
 } Cliente;
+
+typedef struct{
+    Produto tabela_produtos[PROD_MAX];
+    IVA tabela_iva[IVA_MAX];
+    Cesto *cesto;
+    Fatura *lista_faturas;
+
+    int num_produtos;
+    int num_ivas;
+    int num_cesto;
+    int num_faturas;
+    int capacidade_cesto;
+    int capacidade_faturas;
+    int total_itens_vend;
+    double total_faturado;
+} Sys;
 
 /*Função auxiliar para o arredondamento de floats*/
 double arredonda2(double preco){
@@ -156,9 +173,9 @@ int testaEAN(char ean[]){
 }
 
 /*Função auxiliar para testar o valor do IVA*/
-int testaIVA(char iva, IVA tabela_iva[], int *numero_ivas){
+int testaIVA(char iva, IVA tabela_iva[], int numero_ivas){
     int i;
-    for (i = 0; i < *numero_ivas; i++){
+    for (i = 0; i < numero_ivas; i++){
         if (iva == tabela_iva[i].c){
             return 0;
         }
@@ -182,7 +199,7 @@ int testaDescricao(char descricao[]){
 }
 
 /*Função para adicionar o produto à tabela de produtos*/
-int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], int *numero_ivas, Cesto **cesto, int *num_cesto){ 
+int addProduto(Sys *sys, char linha[]){ 
     /*Introduz um novo produto no sistema (key = p)
       p <ean> <iva> <preco> <quantidade> <descricao>  */
 
@@ -200,7 +217,7 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
         puts(EAN_ERR);
         return 0;
     }
-    if (testaIVA(iva, tabela_iva, numero_ivas)){
+    if (testaIVA(iva, sys->tabela_iva, sys->num_ivas)){
         /*O caracter do IVA é inválido*/
         puts(IVA_ERR);
         return 0;
@@ -220,44 +237,44 @@ int addProduto(Produto tabela_prod[], int *num, char linha[], IVA tabela_iva[], 
         puts(DESC_ERR);
         return 0;
     }
-    for (i = 0; i < *num; i++){
-        if(strcmp(tabela_prod[i].ean, ean) == 0){
+    for (i = 0; i < sys->num_produtos; i++){
+        if(strcmp(sys->tabela_produtos[i].ean, ean) == 0){
             /*Verificar se o preço do cesto é igual ao introduzido*/
-            if (tabela_prod[i].preco != preco){
-                for (j = 0; j < *num_cesto; j++){
-                    if (strcmp((*cesto)[j].ean, ean) == 0){
+            if (sys->tabela_produtos[i].preco != preco){
+                for (j = 0; j < sys->num_cesto; j++){
+                    if (strcmp((sys->cesto)[j].ean, ean) == 0){
                         puts(PROD_IN_USE_ERR);
                         return 0;
                     }
                 }
         }
         /*Atualizar o stock*/
-        tabela_prod[i].preco = preco;
-        tabela_prod[i].quantidade += quantidade;
-        tabela_prod[i].iva = iva;
-        strcpy(tabela_prod[i].descricao, descricao);
-        printf("%d\n", tabela_prod[i].quantidade);
+        sys->tabela_produtos[i].preco = preco;
+        sys->tabela_produtos[i].quantidade += quantidade;
+        sys->tabela_produtos[i].iva = iva;
+        strcpy(sys->tabela_produtos[i].descricao, descricao);
+        printf("%d\n", sys->tabela_produtos[i].quantidade);
         return 0;
         }       
     }  
 
     /*TESTE*/
-    if (*num >= PROD_MAX){
+    if (sys->num_produtos >= PROD_MAX){
         /*A quantidade de produtos excede o máximo*/
         puts(PROD_ERR);
         return 0;
     }
 
     /*Adicionar os valores à tabela de produtos*/
-    tabela_prod[*num].preco = preco;
-    tabela_prod[*num].quantidade = quantidade;
-    tabela_prod[*num].vendido = 0;
-    tabela_prod[*num].iva = iva;
+    sys->tabela_produtos[sys->num_produtos].preco = preco;
+    sys->tabela_produtos[sys->num_produtos].quantidade = quantidade;
+    sys->tabela_produtos[sys->num_produtos].vendido = 0;
+    sys->tabela_produtos[sys->num_produtos].iva = iva;
     /*Copiar as string para a tabela */
-    strcpy(tabela_prod[*num].ean, ean);  
-    strcpy(tabela_prod[*num].descricao, descricao); 
+    strcpy(sys->tabela_produtos[sys->num_produtos].ean, ean);  
+    strcpy(sys->tabela_produtos[sys->num_produtos].descricao, descricao); 
     
-    (*num)++;
+    sys->num_produtos++;
 
     printf("%d\n", quantidade);
     return 0;
@@ -295,7 +312,7 @@ void imprimeProduto(int indice, Produto tabela_produtos[]){
 }
 
 /*Função para imprimir os produtos listados pelo utilizador*/
-void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
+void listaProduto(Sys *sys, char linha[]){
     /*Imprime a info de todos os produtos (key = l)*/
     char *token, delimitadores[] = " \n\t";
     int i, verifica = 0;
@@ -307,10 +324,10 @@ void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
 
     /*Caso o utilizador apenas tenha inserido 'l' */
     if (token == NULL){
-        for (i = 0; i < *num; i++){
+        for (i = 0; i < sys->num_produtos; i++){
             /*Apenas imprime se houver stock*/
-            if (tabela_produtos[i].quantidade > 0){
-                imprimeProduto(i, tabela_produtos);
+            if (sys->tabela_produtos[i].quantidade > 0){
+                imprimeProduto(i, sys->tabela_produtos);
                 /*Atualizar a variável de verificação*/
                 verifica = EXISTE;
             }
@@ -324,10 +341,10 @@ void listaProduto(Produto tabela_produtos[], int *num, char linha[]){
     while (token != NULL){
         /*Reiniciar a variável*/
         verifica = 0;
-        for (i = 0; i < *num; i++){
+        for (i = 0; i < sys->num_produtos; i++){
             /*Verifica se existe stock e se o EAN corresponde ao token*/
-            if (tabela_produtos[i].quantidade > 0 && testaToken(token, tabela_produtos[i].ean)){
-                imprimeProduto(i, tabela_produtos);
+            if (sys->tabela_produtos[i].quantidade > 0 && testaToken(token, sys->tabela_produtos[i].ean)){
+                imprimeProduto(i, sys->tabela_produtos);
                 /*Atualizar a variável de verificação*/
                 verifica = EXISTE;
             }
@@ -351,13 +368,13 @@ int procuraProduto(Produto tabela_produtos[], int num_prod, char ean[]){
 }
 
 /*Função auxiliar para calcular o preco de um produto com IVA*/
-double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int *num_ivas, int quant){
+double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int num_ivas, int quant){
     double preco = tabela_produtos[indice].preco;
     int valor_iva = 0, i;
     char iva_char = tabela_produtos[indice].iva;
     
     /*Descobrir o valor do iva*/
-    for (i = 0; i < *num_ivas; i++){
+    for (i = 0; i < num_ivas; i++){
         if (tabela_iva[i].c == iva_char)
             valor_iva = tabela_iva[i].num;
     }
@@ -367,7 +384,7 @@ double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int *nu
 }
 
 /*Função para adicionar produtos ao cesto*/
-void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **cesto, int *num_cesto, IVA tabela_iva[], int *num_ivas, int *capacidade){
+void addCesto(Sys *sys, char linha[]){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
     int quant = 0, input = 0, indice_tabela, i, j, quant_cesto = 0, indice_cesto = NAO_EXISTE, q_atual_cesto = 0;
     char comando, ean[EAN_MAX], arg1[EAN_MAX], arg2[EAN_MAX]; 
@@ -378,13 +395,13 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
 
     if (input == 1){
         /*InsertionSort*/
-        cesto_ordenado = malloc(*num_cesto * sizeof(Cesto)); /*Criar uma cópia para ordenar o cesto*/
+        cesto_ordenado = malloc(sys->num_cesto * sizeof(Cesto)); /*Criar uma cópia para ordenar o cesto*/
         
-        for (i = 0; i < *num_cesto; i++){
-            cesto_ordenado[i] = (*cesto)[i];
+        for (i = 0; i < sys->num_cesto; i++){
+            cesto_ordenado[i] = sys->cesto[i];
         }
 
-        for (i = 1; i < *num_cesto; i++){
+        for (i = 1; i < sys->num_cesto; i++){
             temp = cesto_ordenado[i];
             j = i - 1;
             /*Verifica se a string da esquerda é maior do que a da direita*/
@@ -397,20 +414,20 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
             cesto_ordenado[j+1] = temp;
         }
 
-        for (i = 0; i < *num_cesto; i++){
+        for (i = 0; i < sys->num_cesto; i++){
             /*Obter o indice do produto*/
-            indice_tabela = procuraProduto(tabela_produtos, *num_prod, cesto_ordenado[i].ean);
+            indice_tabela = procuraProduto(sys->tabela_produtos, sys->num_produtos, cesto_ordenado[i].ean);
 
             /*Caso o indice exista calcular o preco com IVA*/
             if (indice_tabela != NAO_EXISTE){
-                preco_com_iva = precoIVA(tabela_produtos, tabela_iva, indice_tabela, num_ivas, cesto_ordenado[i].quantidade);
+                preco_com_iva = precoIVA(sys->tabela_produtos, sys->tabela_iva, indice_tabela, sys->num_ivas, cesto_ordenado[i].quantidade);
                 /*Apresentar as informações*/
                 printf("%c %.2f %d %.2f %s\n", 
-                tabela_produtos[indice_tabela].iva,
-                tabela_produtos[indice_tabela].preco,
+                sys->tabela_produtos[indice_tabela].iva,
+                sys->tabela_produtos[indice_tabela].preco,
                 cesto_ordenado[i].quantidade,
                 preco_com_iva,
-                tabela_produtos[indice_tabela].descricao);
+                sys->tabela_produtos[indice_tabela].descricao);
             }
         }
         free(cesto_ordenado); /*Libertar a memória do cesto_ordenado*/
@@ -435,11 +452,11 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     }
     
     /*Procura se o EAN existe no cesto*/
-    for (i = 0; i < *num_cesto; i++){
+    for (i = 0; i < sys->num_cesto; i++){
         /*Comparar os EAN's do cesto com o introduzido*/
-        if (strcmp((*cesto)[i].ean, ean) == 0){
+        if (strcmp(sys->cesto[i].ean, ean) == 0){
             /*Obter os valores*/
-            quant_cesto = (*cesto)[i].quantidade; 
+            quant_cesto = sys->cesto[i].quantidade; 
             indice_cesto = i;
             break;
         }
@@ -452,7 +469,7 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
     }
 
     /*Obter o indíce do produto no armazém*/
-    indice_tabela = procuraProduto(tabela_produtos, *num_prod, ean);
+    indice_tabela = procuraProduto(sys->tabela_produtos, sys->num_produtos, ean);
 
     /*Testa se o produto existe na lista_produtos*/
     if (indice_tabela == NAO_EXISTE){
@@ -460,64 +477,64 @@ void addCesto(Produto tabela_produtos[], int *num_prod, char linha[], Cesto **ce
         return;
     }
     /*Testa se o produto existe em stock na lista_produtos*/
-    if (quant > 0 && tabela_produtos[indice_tabela].quantidade < quant){
+    if (quant > 0 && sys->tabela_produtos[indice_tabela].quantidade < quant){
         puts(NO_STOCK_ERR);
         return;
     }
 
     /*-------------------------------------------*/
     /*Atualizar stock na tabela_produtos (remover quant)*/
-    tabela_produtos[indice_tabela].quantidade -= quant;
+    sys->tabela_produtos[indice_tabela].quantidade -= quant;
     /*Atualizar a quantidade vendida*/
-    tabela_produtos[indice_tabela].vendido += quant;
+    sys->tabela_produtos[indice_tabela].vendido += quant;
 
     /*Caso o item já esteja no cesto*/
     if (indice_cesto != NAO_EXISTE){
         /*Atualizar a quantidade*/
-        (*cesto)[indice_cesto].quantidade += quant;
-        q_atual_cesto = (*cesto)[indice_cesto].quantidade;
+        sys->cesto[indice_cesto].quantidade += quant;
+        q_atual_cesto = sys->cesto[indice_cesto].quantidade;
     }
     /*Caso o item não exista no cesto*/
     else if (indice_cesto == NAO_EXISTE){
         /*Caso a capacidade do array não seja suficiente para o número de valores no cesto*/
-        if (*capacidade <= *num_cesto){
-            if (*capacidade == 0)
-                *capacidade = 2;
+        if (sys->capacidade_cesto <= sys->num_cesto){
+            if (sys->capacidade_cesto == 0)
+                sys->capacidade_cesto = 2;
             /*Aumentar o tamanho do array "*cesto" para o dobro dos espaços*/
-            (*capacidade) *= 2; /*Aumentar a capacidade*/
-            *cesto = realloc(*cesto, (*capacidade) * sizeof(Cesto)); /*Alocar memória*/
+            sys->capacidade_cesto *= 2; /*Aumentar a capacidade*/
+            sys->cesto = realloc(sys->cesto, sys->capacidade_cesto * sizeof(Cesto)); /*Alocar memória*/
         }
         /*Inserir os dados no array cesto*/
-        strcpy((*cesto)[*num_cesto].ean, ean);
-        (*cesto)[*num_cesto].quantidade = quant;
+        strcpy(sys->cesto[sys->num_cesto].ean, ean);
+        sys->cesto[sys->num_cesto].quantidade = quant;
         q_atual_cesto = quant;
 
-        (*num_cesto)++;
+        sys->num_cesto++;
     }
     
-    preco_com_iva = precoIVA(tabela_produtos, tabela_iva, indice_tabela, num_ivas, q_atual_cesto);
+    preco_com_iva = precoIVA(sys->tabela_produtos, sys->tabela_iva, indice_tabela, sys->num_ivas, q_atual_cesto);
     
     if (indice_cesto == NAO_EXISTE){
         /*Se o item for novo no cesto é necessário guardá-lo no indice correspondente*/
-        (*cesto)[*num_cesto-1].preco = preco_com_iva;
+        sys->cesto[sys->num_cesto - 1].preco = preco_com_iva;
     }
     else{
         /*Se o produto já existia, basta apenas atualizar o valor do indice*/
-        (*cesto)[indice_cesto].preco = preco_com_iva;
+        sys->cesto[indice_cesto].preco = preco_com_iva;
     }
 
     printf("%c %.2f %d %.2lf %s\n", 
-            tabela_produtos[indice_tabela].iva,
-            tabela_produtos[indice_tabela].preco,
+            sys->tabela_produtos[indice_tabela].iva,
+            sys->tabela_produtos[indice_tabela].preco,
             q_atual_cesto,
             preco_com_iva,
-            tabela_produtos[indice_tabela].descricao);
+            sys->tabela_produtos[indice_tabela].descricao);
 
     return;
 }
 
 /*Função que imprime um resumo da faturação ao utilizador*/
-void resumoFat(Produto tabela_produtos[], IVA tabela_iva[], char linha[], int *num_prod, int *num_ivas, int total_itens_vendidos, int total_faturas, double valor_faturado){
+void resumoFat(Sys *sys, char linha[]){
     /*Resumo da Faturação (key = r)*/
     char comando, ean[EAN_MAX];
     int input = 0, indice, i = 0;
@@ -526,12 +543,12 @@ void resumoFat(Produto tabela_produtos[], IVA tabela_iva[], char linha[], int *n
     /*Caso o utilizador não introduza argumentos */
     if (input == 1){
         /*num total itens comprados | numero total faturas emitidas | valor total faturado*/
-        printf("%d %d %.2f\n", total_itens_vendidos, total_faturas, valor_faturado);
+        printf("%d %d %.2f\n", sys->total_itens_vend, sys->num_faturas, sys->total_faturado);
         /*Imprimir a tabela de ivas*/
-        for (i = 0; i < *num_ivas; i++){
+        for (i = 0; i < sys->num_ivas; i++){
             printf("%c %d%%\n", 
-            tabela_iva[i].c,
-            tabela_iva[i].num);
+            sys->tabela_iva[i].c,
+            sys->tabela_iva[i].num);
         }
         return;
     } 
@@ -544,7 +561,7 @@ void resumoFat(Produto tabela_produtos[], IVA tabela_iva[], char linha[], int *n
             return;
         }
         /*Obter o indice do produto*/
-        indice = procuraProduto(tabela_produtos, *num_prod, ean);
+        indice = procuraProduto(sys->tabela_produtos, sys->num_produtos, ean);
 
         /*Verificar se o produto existe*/
         if (indice == NAO_EXISTE){
@@ -553,9 +570,9 @@ void resumoFat(Produto tabela_produtos[], IVA tabela_iva[], char linha[], int *n
         }
         /*Imprimir os dados sobre o produto*/
         printf("%d %d %s\n", 
-            tabela_produtos[indice].quantidade,
-            tabela_produtos[indice].vendido,
-            tabela_produtos[indice].descricao
+            sys->tabela_produtos[indice].quantidade,
+            sys->tabela_produtos[indice].vendido,
+            sys->tabela_produtos[indice].descricao
         );
         return;
     }   
@@ -601,7 +618,7 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
         }
     }
 
-void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, char linha[], int num_prod, int *num_cesto, int *num_faturas, int *capacidade_fat, int *total_itens, double *total_valor){
+void fatura(Sys *sys, char linha[]){
     /*Fatura os produtos no cesto (key = f)*/
     char nif_str[STR_MAX] = "999999999";
     char nome[STR_MAX];
@@ -646,61 +663,61 @@ void fatura(Produto tabela_produtos[], Cesto **cesto, Fatura **lista_faturas, ch
 
     /*Caso o nome seja "error"*/
     if (strcmp(nome, "error") == 0){
-        for (j = 0; j < *num_cesto; j++){
+        for (j = 0; j < sys->num_cesto; j++){
             /*Procurar o indice do produto na tabela*/
-            int id_prod = procuraProduto(tabela_produtos, num_prod, (*cesto)[j].ean);
+            int id_prod = procuraProduto(sys->tabela_produtos, sys->num_produtos, sys->cesto[j].ean);
             if (id_prod != NAO_EXISTE){
-                tabela_produtos[id_prod].vendido -= (*cesto)[j].quantidade; /*Remover as vendas*/
-                tabela_produtos[id_prod].quantidade += (*cesto)[j].quantidade; /*Repor o stock*/
+                sys->tabela_produtos[id_prod].vendido -= sys->cesto[j].quantidade; /*Remover as vendas*/
+                sys->tabela_produtos[id_prod].quantidade += sys->cesto[j].quantidade; /*Repor o stock*/
             }
         }
         /*Reiniciar o contador de itens no cesto*/
-        (*num_cesto) = 0;
+        sys->num_cesto = 0;
         return;
     }
 
     /*Calcular os valores totais*/
-    for (i = 0; i < *num_cesto; i++){
-        if ((*cesto)[i].quantidade > 0){
-            total_itens_fatura += (*cesto)[i].quantidade;
-            valor_fatura += (*cesto)[i].preco;
+    for (i = 0; i < sys->num_cesto; i++){
+        if (sys->cesto[i].quantidade > 0){
+            total_itens_fatura += sys->cesto[i].quantidade;
+            valor_fatura += sys->cesto[i].preco;
         }
     }
 
     /*Reservar memória*/
-    if (*num_faturas >= *capacidade_fat){
-        if (*capacidade_fat == 0){
-            *capacidade_fat += 2;
+    if (sys->num_faturas >= sys->capacidade_faturas){
+        if (sys->capacidade_faturas == 0){
+            sys->capacidade_faturas += 2;
         }
         /*Realocar novo espaço de memória*/
-        (*capacidade_fat) *= 2; /*Atualizar a capacidade*/
-        *lista_faturas = realloc(*lista_faturas, (*capacidade_fat) * sizeof(Fatura)); /*Alocar espaço de memória*/
+        (sys->capacidade_faturas) *= 2; /*Atualizar a capacidade*/
+        sys->lista_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
     }
 
     /*Guardar Fatura*/
-    (*lista_faturas)[*num_faturas].nif = nif_num; /*Guardar NIF*/
+    sys->lista_faturas[sys->num_faturas].nif = nif_num; /*Guardar NIF*/
 
     /*Reservar espaço de memória para o nome cliente*/
-    (*lista_faturas)[*num_faturas].nome_cliente = malloc(strlen(nome) + 1); 
-    strcpy((*lista_faturas)[*num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
+    sys->lista_faturas[sys->num_faturas].nome_cliente = malloc(strlen(nome) + 1); 
+    strcpy(sys->lista_faturas[sys->num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
 
-    (*lista_faturas)[*num_faturas].total_itens = total_itens_fatura; /*Guardar o numero total de itens na fatura*/
-    (*lista_faturas)[*num_faturas].valor_total = valor_fatura; /*Guardar o valor monetário da fatura*/
-    (*lista_faturas)[*num_faturas].id_fatura = *num_faturas + 1; /*Atualizar o id da fatura*/
+    sys->lista_faturas[sys->num_faturas].total_itens = total_itens_fatura; /*Guardar o numero total de itens na fatura*/
+    sys->lista_faturas[sys->num_faturas].valor_total = valor_fatura; /*Guardar o valor monetário da fatura*/
+    sys->lista_faturas[sys->num_faturas].id_fatura = sys->num_faturas + 1; /*Atualizar o id da fatura*/
 
     /*Atualizar variáveis globais*/
-    *total_itens += total_itens_fatura; /*Atualizar o total de itens em faturas*/
-    *total_valor += valor_fatura; /*Atualizar o valor total monetário em faturas*/
+    sys->total_itens_vend += total_itens_fatura; /*Atualizar o total de itens em faturas*/
+    sys->total_faturado += valor_fatura; /*Atualizar o valor total monetário em faturas*/
 
     /*Emitir Fatura*/
-    printf("%d %.2f %d\n", total_itens_fatura, valor_fatura, (*num_faturas) + 1);
+    printf("%d %.2f %d\n", total_itens_fatura, valor_fatura, (sys->num_faturas) + 1);
 
-    (*num_faturas)++;
-    (*num_cesto) = 0; /*Esvaziar o cesto*/
+    sys->num_faturas++;
+    sys->num_cesto = 0; /*Esvaziar o cesto*/
     return;
 }
 
-void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
+void listaFat(Sys *sys, char linha[]){
     /*Lista as faturas do sistema (key = c)*/
     char nome[DESC_MAX];
     int i, j, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
@@ -722,12 +739,12 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
         return;
         }
         /*Procurar o cliente na lista de faturação*/
-        for (i = 0; i < num_faturas; i++){
-            if (strcmp(lista_faturas[i].nome_cliente, nome) == 0){
+        for (i = 0; i < sys->num_faturas; i++){
+            if (strcmp(sys->lista_faturas[i].nome_cliente, nome) == 0){
                 printf("%d %.2f %s\n", 
-                        lista_faturas[i].id_fatura,
-                        lista_faturas[i].valor_total,
-                        lista_faturas[i].nome_cliente);
+                        sys->lista_faturas[i].id_fatura,
+                        sys->lista_faturas[i].valor_total,
+                        sys->lista_faturas[i].nome_cliente);
                 validacao = EXISTE;
             }
         }
@@ -741,15 +758,15 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
     /*Listar todas as faturas por ordem:
         1.ª Alfabeticamente
         2.ª Cronologicamente*/
-        copia = malloc(num_faturas * sizeof(Fatura));
+        copia = malloc(sys->num_faturas * sizeof(Fatura));
 
         /*Copiar as faturas*/
-        for (i = 0; i < num_faturas; i++){
-            copia[i] = lista_faturas[i];
+        for (i = 0; i < sys->num_faturas; i++){
+            copia[i] = sys->lista_faturas[i];
         }
 
         /*Insertion Sort por ordem alfabética*/
-        for (i = 1; i < num_faturas; i++){
+        for (i = 1; i < sys->num_faturas; i++){
             j = i - 1;
             temp = copia[i];
             while (j >= 0 && strcmp(copia[j].nome_cliente, temp.nome_cliente) > 0){
@@ -759,7 +776,7 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
             copia[j+1] = temp;
         }
         /*Apresentar as faturas*/
-        for (i = 0; i < num_faturas; i++){
+        for (i = 0; i < sys->num_faturas; i++){
             printf("%d %.2f %s\n", 
                 copia[i].id_fatura,
                 copia[i].valor_total,
@@ -771,57 +788,86 @@ void listaFat(Fatura lista_faturas[], char linha[], int num_faturas){
     return;    
 }
 
-void apagaRegisto(){
+void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
-    printf("Apaga o Registo\n");
+    int input, quant;
+    char comando, ean[EAN_MAX];
+    input = sscanf(linha, " %c %s %d", &comando, ean, &quant);
+
+    /*TESTES*/
+    /*Testar a validade do EAN*/
+    if (testaEAN(ean)){
+        printf(EAN_ERR"\n");
+        return;
+    }
+
+    if (input == 2){
+        /*Apenas remover nos itens comprados*/
+    }
+    else if (input == 3){
+        /*Testar se a quantidade é válida (FALTA UM TESTE)*/
+        if (quant < 0){
+            printf(QUANT_ERR"\n");
+            return;
+        }
+        for (int i = 0; i < sys->num_cesto; i++){
+            if (strcmp(sys->cesto[i].ean, ean)){
+                if (quant > sys->cesto[i].quantidade){
+                    printf(QUANT_ERR"\n");
+                    return;
+                }
+            }
+        }
+    }
 }
 
 //CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas
+//CORRIGIR ERRO f cliente cliente -> invalid nif
 int main(int num_palavras, char *lista_palavras[]){
-    Produto tabela_prod[PROD_MAX]; /*Criar a tabela de produtos*/
-    IVA tabela_iva[IVA_MAX]; /*Criar a tabela com os valores de IVA*/
-    Cesto *cesto = NULL; /*Criar a tabela com os espaços para os produtos no cesto*/
-    Fatura *lista_faturas = NULL;
-    char input[STR_MAX]; /*Criar tabela para recolher o input*/
-    double valor_total_faturado = 0.0;
-    int numero_produtos = 0, numero_ivas = 0, num_itens_cesto = 0;
-    int capacidade = 0, numero_faturas = 0, capacidade_faturas = 0;
-    int total_itens_vendidos = 0;
+    Sys sys; /*Inicializar sys*/
+    char input[STR_MAX]; /*Criar array para recolher o input*/
+    
+    /*Inicializar cada um dos parâmetros de Sys*/
+    sys.cesto = NULL; /*Criar a tabela com os espaços para os produtos no cesto*/
+    sys.lista_faturas = NULL; /*Criar a tabela para listar as faturas*/    
+    sys.total_faturado = 0.0;
+    sys.num_produtos = 0;
+    sys.num_ivas = 0;
+    sys.num_cesto = 0;
+    sys.capacidade_cesto = 0;
+    sys.num_faturas = 0; 
+    sys.capacidade_faturas = 0;
+    sys.total_itens_vend = 0;
 
-    carregaIVA(num_palavras, lista_palavras, tabela_iva, &numero_ivas);
+    carregaIVA(num_palavras, lista_palavras, sys.tabela_iva, &sys.num_ivas);
 
     while(fgets(input, STR_MAX, stdin)){
         switch(input[0]){
             case 'q':{
                 int i;
                 /*Libertar a memória dos arrays dinâmicos*/
-                for (i = 0; i < numero_faturas; i++){
-                    free(lista_faturas[i].nome_cliente);
+                for (i = 0; i < sys.num_faturas; i++){
+                    free(sys.lista_faturas[i].nome_cliente);
                 }
-                free(lista_faturas);
-                free(cesto); 
+                free(sys.lista_faturas);
+                free(sys.cesto); 
                 return 0;}
             case 'p': 
-                addProduto(tabela_prod, &numero_produtos, input, 
-                            tabela_iva, &numero_ivas, &cesto, &num_itens_cesto);
+                addProduto(&sys, input);
                 break;
             case 'l': 
-                listaProduto(tabela_prod, &numero_produtos, input); 
+                listaProduto(&sys, input); 
                 break;
             case 'a': 
-                addCesto(tabela_prod, &numero_produtos, input, &cesto, 
-                        &num_itens_cesto, tabela_iva, &numero_ivas, &capacidade);
+                addCesto(&sys, input);
                 break;
             case 'r': 
-                resumoFat(tabela_prod, tabela_iva, input, &numero_produtos, &numero_ivas, 
-                        total_itens_vendidos, numero_faturas, valor_total_faturado);
+                resumoFat(&sys ,input);
                 break;
-            case 'f': fatura(tabela_prod, &cesto, &lista_faturas, input, 
-                            numero_produtos, &num_itens_cesto, &numero_faturas, 
-                            &capacidade_faturas, &total_itens_vendidos, &valor_total_faturado); 
+            case 'f': fatura(&sys, input); 
                 break;
-            case 'c': listaFat(lista_faturas, input, numero_faturas); break;
-            case 'd': apagaRegisto(); break;
+            case 'c': listaFat(&sys, input); break;
+            case 'd': apagaRegisto(&sys, input); break;
             default: break;
         }
     }
