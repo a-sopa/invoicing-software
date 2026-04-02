@@ -5,9 +5,79 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "constantes.h" /*Importar a biblioteca de constantes*/
-#include "estruturas.h" /*Importar a biblioteca de estruturas*/
+#define EAN_MAX 14 /* Número máx de caracteres do EAN */
+#define DESC_MAX 51 /* Número máx de caracteres da descrição*/
+#define STR_MAX 65536 /* Número máx de caracteres das strings*/
+#define PROD_MAX 10000 /* Número máx de produtos*/
+#define IVA_MAX 26 /* Número máx de taxas de IVA */
+#define CONVERSAO '0' /* Constante de conversão de char para int (dígitos)*/
+#define CASAS 2 /*Número de casas decimais restantes de arredondamentos*/
 
+#define NAO_EXISTE -1 /*Estado para a não existência de um item num array*/
+#define EXISTE 1 /*Estado para a existência de um item num array*/
+
+#define EAN_ERR "invalid ean" /* Erro: EAN inválido*/
+#define IVA_ERR "invalid iva" /* Erro: IVA inválido*/
+#define PRICE_ERR "invalid price" /* Erro: preço negativo*/
+#define QUANT_ERR "invalid quantity" /* Erro: quantidade negativa*/
+#define DESC_ERR "invalid description" /* Erro: descrição demasiado longa*/
+#define PROD_IN_USE_ERR "product in use" /*Erro: produto em utilização*/
+#define PROD_ERR "invalid product" /* Erro: quantidade excedente*/
+#define NO_PROD_ERR ": no such product" /*Erro: produto não encontrado*/
+#define NO_STOCK_ERR "no stock" /*Erro: não existe stock*/
+#define NO_NIF_ERR ": no such nif" /*Erro: NIF inválido*/
+#define NAME_ERR "invalid name" /*Erro: nome inválido*/
+#define NO_CL_ERR ": no such client" /*Erro: Cliente inexistente*/
+#define NO_INVOICE ": no such invoice"
+
+typedef struct {
+    double preco; 
+    int quantidade;
+    int vendido; /*Quantidade vendida*/
+    char iva;
+    char ean[EAN_MAX];
+    char descricao[DESC_MAX];
+} Produto;
+
+typedef struct {
+    int num;
+    char c;
+} IVA;
+
+typedef struct {
+    double preco;
+    int quantidade;
+    char ean[EAN_MAX];
+} Cesto;
+
+typedef struct{
+    double valor_total;
+    int id_fatura;
+    int total_itens;
+    int nif;
+    char *nome_cliente;
+} Fatura;
+
+typedef struct{
+    int nif;
+    char nome;
+} Cliente;
+
+typedef struct{
+    Produto tabela_produtos[PROD_MAX];
+    IVA tabela_iva[IVA_MAX];
+    Cesto *cesto;
+    Fatura *lista_faturas;
+
+    int num_produtos;
+    int num_ivas;
+    int num_cesto;
+    int num_faturas;
+    int capacidade_cesto;
+    int capacidade_faturas;
+    int total_itens_vend;
+    double total_faturado;
+} Sys;
 
 /*Função auxiliar para o arredondamento de floats*/
 double arredonda2(double preco){
@@ -587,10 +657,12 @@ void resumoFat(Sys *sys, char linha[]){
 void extraiNome(char linha[], int indice_i, char nome_final[]){
     int i = indice_i;
     int p = 0;
+    int espaco = NAO_EXISTE;
     
-    while (isspace(linha[i])){
-        i++; /*Incrementar o i até encontrar algo que não seja espaço*/
-    }
+    /* Saltar espaços iniciais */
+    while (isspace(linha[i]) && linha[i] != '\0')
+        i++;
+
     /*A linha não tem argumentos*/
     if (linha[i] == '\0'){
         nome_final[0] = '\0';
@@ -613,14 +685,28 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
         }
         nome_final[p] = '\0'; /*Fechar a string*/
     }
-        else{
-            /*Caso o nome não esteja delimitado por aspas*/
-            strcpy(nome_final, &linha[i]);
+    else{
+        /*Caso o nome não esteja delimitado por aspas*/ /*NÃO ESTÁ A FUNCIONAR*/
+        int tamanho = strlen(linha) - indice_i; 
+        /*Verificar se tem espaços*/
+        for (int j = indice_i; j < tamanho; j++){ 
+            if (isspace(linha[j])){
+                espaco = EXISTE;
+                break;
+            }
+        }
+        /*Invalidar a string caso existam espaços*/
+        if (espaco == EXISTE){
+            strcpy(nome_final, "!");
+            return;
+        }
 
-            /*Limpar o fim da string*/
-            int len = strlen(nome_final);
-            if (len > 0 && nome_final[len-1] == '\n')
-                nome_final[len-1] = '\0';
+        strcpy(nome_final, &linha[i]);
+
+        /*Limpar o fim da string*/
+        int len = strlen(nome_final);
+        if (len > 0 && nome_final[len-1] == '\n')
+            nome_final[len-1] = '\0';
         }
     }
 
@@ -846,106 +932,39 @@ int pesquisaFat(Sys *sys, int id_input){
 
 void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
-    int input, quant, id_fatura, arg2, indice_fat, i, indice_prod, indice_rem = 0;
-    char comando, arg1[STR_MAX], ean[STR_MAX];
-    input = sscanf(linha, " %c %s %d", &comando, arg1, &arg2);
+    int input, quant;
+    char comando, ean[EAN_MAX];
+    input = sscanf(linha, " %c %s %d", &comando, ean, &quant);
+
+    /*TESTES*/
+    /*Testar a validade do EAN*/
+    if (testaEAN(ean)){
+        printf(EAN_ERR"\n");
+        return;
+    }
 
     if (input == 2){
         /*Apenas remover nos itens comprados*/
-        id_fatura = atoi(arg1);
-        indice_fat = pesquisaFat(sys, id_fatura);
-
-        if (indice_fat == NAO_EXISTE){
-            printf("%d"NO_INVOICE"\n", id_fatura);
-            return;
-        }
-        /*Apresentar os dados da fatura removida*/
-        printf("%.2f %d %s\n", 
-            sys->lista_faturas[indice_fat].valor_total,
-            sys->lista_faturas[indice_fat].nif,
-            sys->lista_faturas[indice_fat].nome_cliente);
-        
-        sys->total_itens_vend -= sys->lista_faturas[indice_fat].total_itens;
-        sys->total_faturado -= sys->lista_faturas[indice_fat].valor_total;
-        free(sys->lista_faturas[indice_fat].nome_cliente);
-        
-        /*Remover a fatura do array*/
-        for (i = indice_fat; i < sys->num_faturas - 1; i++){
-            sys->lista_faturas[i] = sys->lista_faturas[i+1];
-        }
-
-        sys->num_faturas--; /*Diminuir o número de faturas existentes*/
     }
     else if (input == 3){
-        /*Atribuir os valores dos argumentos às variáveis*/
-        strcpy(ean, arg1);
-        quant = arg2;
-
-        /*Testar a validade do EAN*/
-        if (testaEAN(ean)){
-            printf(EAN_ERR"\n");
-            return;
-        }
-        /*Testar se o ean corresponde a algum produto*/
-        indice_prod = procuraProduto(sys, ean);
-
-        /*Imprimir mensagem de erro caso o ean não corresponda a um produto*/
-        if (indice_prod == NAO_EXISTE){
-            printf("%s"NO_PROD_ERR"\n", ean);
+        /*Testar se a quantidade é válida (FALTA UM TESTE)*/
+        if (quant < 0){
+            printf(QUANT_ERR"\n");
             return;
         }
         /*Testar se o produto está no cesto*/
         for (int i = 0; i < sys->num_cesto; i++){
-            if (strcmp(sys->cesto[i].ean, ean) == 0){
-                printf(PROD_IN_USE_ERR"\n");
-                return;
-            }
-        }
-
-        /*Testar se a quantidade é válida */
-        if (quant <= 0 || quant > sys->tabela_produtos[indice_prod].quantidade){
-            printf(QUANT_ERR"\n");
-            return;
-        }
-        
-        /*Retirar a quantidade indicada*/
-        sys->tabela_produtos[indice_prod].quantidade -= quant;
-
-        /*Imprimir os dados atualizados*/
-        printf("%d %s\n", 
-                sys->tabela_produtos[indice_prod].quantidade,
-                sys->tabela_produtos[indice_prod].descricao);
-        
-        /*Caso o stock seja zero*/
-        if (sys->tabela_produtos[indice_prod].quantidade == 0){
-            /*Remover o produto da tabela_produtos*/
-            for (i = indice_prod; i < sys->num_produtos - 1; i++){
-                sys->tabela_produtos[i] = sys->tabela_produtos[i+1];
-            }
-            /*Encontrar o indice no array ordenado*/
-            for (i = 0; i < sys->num_produtos; i++){
-                if (sys->produtos_por_ean[i] == indice_prod){
-                    indice_rem = i;
-                    break;
+            if (strcmp(sys->cesto[i].ean, ean)){
+                if (quant > sys->cesto[i].quantidade){
+                    printf(QUANT_ERR"\n");
+                    return;
                 }
             }
-            /*Remover o item e passar todos os maiores 1 indice para a esquerda*/
-            for (i = indice_rem; i < sys->num_produtos - 1; i++){
-                sys->produtos_por_ean[i] = sys->produtos_por_ean[i+1];
-            }
-
-            /*Atualizar os indices: Os indices maiores do que o removido têm de subtrair 1*/
-            for (i = 0; i < sys->num_produtos - 1; i++){
-                if (sys->produtos_por_ean[i] > indice_prod){
-                    sys->produtos_por_ean[i]--;
-                }
-            }
-
-            sys->num_produtos--; /*Reduzir o número total de produtos*/
         }
     }
 }
 
+<<<<<<< HEAD
 /*Função auxiliar para libertar a memória dinâmica alocada*/
 void limpaMemoria(Sys *sys){
     int i;
@@ -958,6 +977,10 @@ void limpaMemoria(Sys *sys){
 }
 
 
+=======
+//CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas
+//CORRIGIR ERRO f cliente cliente -> invalid nif
+>>>>>>> 7c9c5b1 (Começar o "d")
 int main(int num_palavras, char *lista_palavras[]){
     Sys sys; /*Inicializar sys*/
     char input[STR_MAX]; /*Criar array para recolher o input*/
