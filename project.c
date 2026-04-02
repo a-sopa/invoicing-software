@@ -83,12 +83,13 @@ double arredonda2(double preco){
     long long centimos, i;
     double preco_final, multiplicador = 1.0;
 
+    /*Obter o multiplicador de acordo com as casas decimais desejadas*/
     for (i = 0; i < CASAS; i++){
         multiplicador *= 10.0;
     }
-
-    centimos = (long long)(preco * multiplicador + 0.5 + 1e-9);
-    preco_final = centimos / 100.0;
+    /*Calcular o valor dos cêntimos (Ficar apenas com a parte inteira)*/
+    centimos = (long long)(preco * multiplicador + 0.5 + 1e-9); /*Somar 1e-9 para evitar certos erros (5.50 = 5.49999)*/
+    preco_final = centimos / multiplicador;
 
     return preco_final;
 }
