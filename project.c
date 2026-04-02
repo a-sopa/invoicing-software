@@ -789,30 +789,68 @@ void listaFat(Sys *sys, char linha[]){
     return;    
 }
 
+/*Função auxiliar que realiza pesquisa binária segundo o id de fatura*/
+int pesquisaFat(Sys *sys, int id_input){
+    int esq = 0, dir = sys->num_faturas - 1;
+    int meio;
+
+    while (esq <= dir){
+        /*Definir o meio*/
+        meio = (esq + dir) / 2;
+
+        if (sys->lista_faturas[meio].id_fatura == id_input){
+            /*Caso os ids sejam correspondentes*/
+            return meio;
+        }
+
+        if (sys->lista_faturas[meio].id_fatura < id_input){
+            /*Caso o id procurado seja maior, logo tem de estar à direita*/
+            esq = meio + 1;
+        }
+        else{
+            /*Caso o id procurado seja menor, logo tem de estar à esquerda*/
+            dir = meio - 1;
+        }
+    }
+    
+    return NAO_EXISTE; /*Caso o id não esteja na lista*/
+}
+
 void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
-    int input, quant;
-    char comando, ean[EAN_MAX];
-    input = sscanf(linha, " %c %s %d", &comando, ean, &quant);
+    int input, quant, id_fatura, arg2, indice_fat;
+    char comando, arg1[EAN_MAX], ean[EAN_MAX];
+    input = sscanf(linha, " %c %s %d", &comando, arg1, &arg2);
 
     /*TESTES*/
-    /*Testar a validade do EAN*/
-    if (testaEAN(ean)){
-        printf(EAN_ERR"\n");
-        return;
-    }
 
     if (input == 2){
         /*Apenas remover nos itens comprados*/
+        id_fatura = atoi(arg1);
+        indice_fat = pesquisaFat(sys, id_fatura);
+
+        if (indice_fat == NAO_EXISTE){
+            printf("%d"NO_INVOICE"\n", id_fatura);
+            return;
+        }
+
     }
     else if (input == 3){
+        /*Atribuir os valores dos argumentos às variáveis*/
+        strcpy(ean, arg1);
+        quant = arg2;
         /*Testar se a quantidade é válida (FALTA UM TESTE)*/
         if (quant < 0){
             printf(QUANT_ERR"\n");
             return;
         }
+        /*Testar a validade do EAN*/
+        if (testaEAN(ean)){
+            printf(EAN_ERR"\n");
+            return;
+    }
         for (int i = 0; i < sys->num_cesto; i++){
-            if (strcmp(sys->cesto[i].ean, ean)){
+            if (strcmp(sys->cesto[i].ean, ean) == 0){
                 if (quant > sys->cesto[i].quantidade){
                     printf(QUANT_ERR"\n");
                     return;
@@ -822,7 +860,7 @@ void apagaRegisto(Sys *sys, char linha[]){
     }
 }
 
-//CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas
+//CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas e tem de dar invalid nif
 //CORRIGIR ERRO f cliente cliente -> invalid nif
 int main(int num_palavras, char *lista_palavras[]){
     Sys sys; /*Inicializar sys*/
