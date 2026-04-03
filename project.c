@@ -72,6 +72,7 @@ typedef struct{
     int num_ivas;
     int num_cesto;
     int num_faturas;
+    int num_faturas_emit;
     int capacidade_cesto;
     int capacidade_faturas;
     int total_itens_vend;
@@ -215,27 +216,27 @@ int addProduto(Sys *sys, char linha[]){
     /*TESTES*/
     if (testaEAN(ean)){
         /*O código EAN é inválido*/
-        puts(EAN_ERR);
+        printf(EAN_ERR"\n");
         return 0;
     }
     if (testaIVA(iva, sys->tabela_iva, sys->num_ivas)){
         /*O caracter do IVA é inválido*/
-        puts(IVA_ERR);
+        printf(IVA_ERR"\n");
         return 0;
     }
     if (preco <= 0){
         /*O preço é inferior/igual a 0*/
-        puts(PRICE_ERR);
+        printf(PRICE_ERR"\n");
         return 0;
     }
     if (quantidade < 0){
         /*A quantidade introduzida é negativa*/
-        puts(QUANT_ERR);
+        printf(QUANT_ERR"\n");
         return 0;
     }
     if (testaDescricao(descricao)){
         /*A descrição ultrapassa o tamanho máximo*/
-        puts(DESC_ERR);
+        printf(DESC_ERR"\n");
         return 0;
     }
     for (i = 0; i < sys->num_produtos; i++){
@@ -244,7 +245,7 @@ int addProduto(Sys *sys, char linha[]){
             if (sys->tabela_produtos[i].preco != preco){
                 for (j = 0; j < sys->num_cesto; j++){
                     if (strcmp((sys->cesto)[j].ean, ean) == 0){
-                        puts(PROD_IN_USE_ERR);
+                        printf(PROD_IN_USE_ERR"\n");
                         return 0;
                     }
                 }
@@ -262,7 +263,7 @@ int addProduto(Sys *sys, char linha[]){
     /*TESTE*/
     if (sys->num_produtos >= PROD_MAX){
         /*A quantidade de produtos excede o máximo*/
-        puts(PROD_ERR);
+        printf(PROD_ERR"\n");
         return 0;
     }
 
@@ -448,7 +449,7 @@ void addCesto(Sys *sys, char linha[]){
     /*TESTES*/
     /*Testa se o EAN é válido*/
     if (testaEAN(ean)){
-        puts(EAN_ERR);
+        printf(EAN_ERR"\n");
         return;
     }
     
@@ -465,7 +466,7 @@ void addCesto(Sys *sys, char linha[]){
 
     /*Testa se existem artigos suficientes no cesto para serem removidos*/
     if (quant < 0 && quant_cesto < quant*(-1)){
-        puts(QUANT_ERR); 
+        printf(QUANT_ERR"\n"); 
         return;
     }
 
@@ -479,7 +480,7 @@ void addCesto(Sys *sys, char linha[]){
     }
     /*Testa se o produto existe em stock na lista_produtos*/
     if (quant > 0 && sys->tabela_produtos[indice_tabela].quantidade < quant){
-        puts(NO_STOCK_ERR);
+        printf(NO_STOCK_ERR"\n");
         return;
     }
 
@@ -544,7 +545,7 @@ void resumoFat(Sys *sys, char linha[]){
     /*Caso o utilizador não introduza argumentos */
     if (input == 1){
         /*num total itens comprados | numero total faturas emitidas | valor total faturado*/
-        printf("%d %d %.2f\n", sys->total_itens_vend, sys->num_faturas, sys->total_faturado);
+        printf("%d %d %.2f\n", sys->total_itens_vend, sys->num_faturas_emit, sys->total_faturado);
         /*Imprimir a tabela de ivas*/
         for (i = 0; i < sys->num_ivas; i++){
             printf("%c %d%%\n", 
@@ -558,7 +559,7 @@ void resumoFat(Sys *sys, char linha[]){
     else{
         /*TESTES*/
         if (testaEAN(ean)){
-            puts(EAN_ERR);
+            printf(EAN_ERR"\n");
             return;
         }
         /*Obter o indice do produto*/
@@ -658,7 +659,7 @@ void fatura(Sys *sys, char linha[]){
 
     /*O primeiro elemento do nome de cliente tem de ser uma letra*/
     if (!isalpha(nome[0])){
-        puts(NAME_ERR);
+        printf(NAME_ERR"\n");
         return;
     }
 
@@ -713,7 +714,9 @@ void fatura(Sys *sys, char linha[]){
     /*Emitir Fatura*/
     printf("%d %.2f %d\n", total_itens_fatura, valor_fatura, (sys->num_faturas) + 1);
 
+    /*Aumentar o número de faturas existentes e emitidas*/
     sys->num_faturas++;
+    sys->num_faturas_emit++;
     sys->num_cesto = 0; /*Esvaziar o cesto*/
     return;
 }
@@ -736,7 +739,7 @@ void listaFat(Sys *sys, char linha[]){
     if (argumento == EXISTE){
         /*TESTES*/
         if (!isalpha(nome[0])){
-        puts(NAME_ERR);
+        printf(NAME_ERR"\n");
         return;
         }
         /*Procurar o cliente na lista de faturação*/
@@ -818,11 +821,9 @@ int pesquisaFat(Sys *sys, int id_input){
 
 void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
-    int input, quant, id_fatura, arg2, indice_fat;
+    int input, quant, id_fatura, arg2, indice_fat, i;
     char comando, arg1[EAN_MAX], ean[EAN_MAX];
     input = sscanf(linha, " %c %s %d", &comando, arg1, &arg2);
-
-    /*TESTES*/
 
     if (input == 2){
         /*Apenas remover nos itens comprados*/
@@ -833,7 +834,22 @@ void apagaRegisto(Sys *sys, char linha[]){
             printf("%d"NO_INVOICE"\n", id_fatura);
             return;
         }
+        /*Apresentar os dados da fatura removida*/
+        printf("%.2f %d %s\n", 
+            sys->lista_faturas[indice_fat].valor_total,
+            sys->lista_faturas[indice_fat].nif,
+            sys->lista_faturas[indice_fat].nome_cliente);
+        
+        sys->total_itens_vend -= sys->lista_faturas[indice_fat].total_itens;
+        sys->total_faturado -= sys->lista_faturas[indice_fat].valor_total;
+        free(sys->lista_faturas[indice_fat].nome_cliente);
+        
+        /*Remover a fatura do array*/
+        for (i = indice_fat; i < sys->num_faturas - 1; i++){
+            sys->lista_faturas[i] = sys->lista_faturas[i+1];
+        }
 
+        sys->num_faturas--; /*Diminuir o número de faturas existentes*/
     }
     else if (input == 3){
         /*Atribuir os valores dos argumentos às variáveis*/
@@ -877,6 +893,7 @@ int main(int num_palavras, char *lista_palavras[]){
     sys.num_faturas = 0; 
     sys.capacidade_faturas = 0;
     sys.total_itens_vend = 0;
+    sys.num_faturas_emit = 0;
 
     carregaIVA(num_palavras, lista_palavras, sys.tabela_iva, &sys.num_ivas);
 
