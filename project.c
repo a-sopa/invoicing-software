@@ -206,7 +206,7 @@ void addProduto(Sys *sys, char linha[]){
     /*O Produto já existe na tabela*/
     if (indice_prod != NAO_EXISTE){
         /*Verificar se o preço do cesto é igual ao introduzido*/
-        if (sys->tabela_produtos[i].preco != preco){
+        if (sys->tabela_produtos[indice_prod].preco != preco){
             for (j = 0; j < sys->num_cesto; j++){
                 if (strcmp((sys->cesto)[j].ean, ean) == 0){
                     printf(PROD_IN_USE_ERR"\n");
@@ -215,12 +215,12 @@ void addProduto(Sys *sys, char linha[]){
             }
         }
         /*Atualizar o stock*/
-        sys->tabela_produtos[i].preco = preco;
-        sys->tabela_produtos[i].quantidade += quantidade;
-        sys->tabela_produtos[i].iva = iva;
-        strcpy(sys->tabela_produtos[i].descricao, descricao);
+        sys->tabela_produtos[indice_prod].preco = preco;
+        sys->tabela_produtos[indice_prod].quantidade += quantidade;
+        sys->tabela_produtos[indice_prod].iva = iva;
+        strcpy(sys->tabela_produtos[indice_prod].descricao, descricao);
 
-        printf("%d\n", sys->tabela_produtos[i].quantidade);
+        printf("%d\n", sys->tabela_produtos[indice_prod].quantidade);
         return;
     } 
 
@@ -255,7 +255,7 @@ void addProduto(Sys *sys, char linha[]){
 
     /*Passar todos os outros indices para a direita*/
     for (i = sys->num_produtos; i > indice_ord; i--){
-        sys->produtos_por_ean[i] = sys->produtos_por_ean[i+1];
+        sys->produtos_por_ean[i] = sys->produtos_por_ean[i-1];
     }
 
     sys->produtos_por_ean[indice_ord] = sys->num_produtos;
