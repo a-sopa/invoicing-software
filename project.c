@@ -825,7 +825,7 @@ int pesquisaFat(Sys *sys, int id_input){
 
 void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
-    int input, quant, id_fatura, arg2, indice_fat, i, indice_prod;
+    int input, quant, id_fatura, arg2, indice_fat, i, indice_prod, indice_rem = 0;
     char comando, arg1[EAN_MAX], ean[EAN_MAX];
     input = sscanf(linha, " %c %s %d", &comando, arg1, &arg2);
 
@@ -866,13 +866,8 @@ void apagaRegisto(Sys *sys, char linha[]){
             return;
         }
         /*Testar se o ean corresponde a algum produto*/
-        indice_prod = NAO_EXISTE;
-        for (int i = 0; i < sys->num_produtos; i++){
-            if (strcmp(sys->tabela_produtos[i].ean, ean) == 0){
-                indice_prod = i;
-                break;
-            }
-        }
+        indice_prod = procuraProduto(sys, ean);
+
         /*Imprimir mensagem de erro caso o ean não corresponda a um produto*/
         if (indice_prod == NAO_EXISTE){
             printf("%s"NO_PROD_ERR"\n", ean);
@@ -900,11 +895,31 @@ void apagaRegisto(Sys *sys, char linha[]){
                 sys->tabela_produtos[indice_prod].quantidade,
                 sys->tabela_produtos[indice_prod].descricao);
         
-        /*Caso o stock seja zero, remover o produto da tabela_produtos*/
+        /*Caso o stock seja zero*/
         if (sys->tabela_produtos[indice_prod].quantidade == 0){
-            for (i = indice_prod; i < sys->num_produtos; i++){
+            /*Remover o produto da tabela_produtos*/
+            for (i = indice_prod; i < sys->num_produtos - 1; i++){
                 sys->tabela_produtos[i] = sys->tabela_produtos[i+1];
             }
+            /*Encontrar o indice no array ordenado*/
+            for (i = 0; i < sys->num_produtos; i++){
+                if (sys->produtos_por_ean[i] == indice_prod){
+                    indice_rem = i;
+                    break;
+                }
+            }
+            /*Remover o item e passar todos os maiores 1 indice para a esquerda*/
+            for (i = indice_rem; i < sys->num_produtos - 1; i++){
+                sys->produtos_por_ean[i] = sys->produtos_por_ean[i+1];
+            }
+
+            /*Atualizar os indices: Os indices maiores do que o removido têm de subtrair 1*/
+            for (i = 0; i < sys->num_produtos - 1; i++){
+                if (sys->produtos_por_ean[i] > indice_prod){
+                    sys->produtos_por_ean[i]--;
+                }
+            }
+
             sys->num_produtos--; /*Reduzir o número total de produtos*/
         }
     }
