@@ -13,6 +13,8 @@
 /***ESTADOS***/
 #define NAO_EXISTE -1 /*Estado para a não existência de um item num array*/
 #define EXISTE 1 /*Estado para a existência de um item num array*/
+#define VALIDO 1
+#define INVALIDO 0
 
 /***MENSAGENS DE ERRO***/
 #define EAN_ERR "invalid ean" /* Erro: EAN inválido*/
