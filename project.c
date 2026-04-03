@@ -131,7 +131,7 @@ int testaDescricao(char descricao[]){
 }
 
 /*Função auxiliar de pesquisa binária na tabela_produtos*/
-int procuraProduto2(Sys *sys, char ean[]){
+int procuraProduto(Sys *sys, char ean[]){
     int esq = 0; 
     int dir = sys->num_produtos - 1;
     int meio, indice, comparacao;
@@ -201,7 +201,7 @@ void addProduto(Sys *sys, char linha[]){
         return;
     }
     /*Verificar se o produto já existe na tabela_produtos*/
-    indice_prod = procuraProduto2(sys, ean);
+    indice_prod = procuraProduto(sys, ean);
     
     /*O Produto já existe na tabela*/
     if (indice_prod != NAO_EXISTE){
@@ -323,7 +323,7 @@ void imprimeProduto(int indice, Produto tabela_produtos[]){
 void listaProduto(Sys *sys, char linha[]){
     /*Imprime a info de todos os produtos (key = l)*/
     char *token, delimitadores[] = " \n\t";
-    int i, verifica = 0;
+    int i, verifica = 0, indice;
 
     /*Primeiro corte na string (caracter l)*/
     token = strtok(linha, delimitadores);
@@ -349,14 +349,28 @@ void listaProduto(Sys *sys, char linha[]){
     while (token != NULL){
         /*Reiniciar a variável*/
         verifica = 0;
-        for (i = 0; i < sys->num_produtos; i++){
-            /*Verifica se existe stock e se o EAN corresponde ao token*/
-            if (sys->tabela_produtos[i].quantidade > 0 && testaToken(token, sys->tabela_produtos[i].ean)){
-                imprimeProduto(i, sys->tabela_produtos);
-                /*Atualizar a variável de verificação*/
+
+        /*Caso não haja wildcards*/
+        if (strchr(token, '*') == NULL && strchr(token, '?') == NULL){
+            /*Procurar o indice exato do ean*/
+            indice = procuraProduto(sys, token);
+
+            /*Imprimir o produto caso exista e a quantidade não seja 0*/
+            if (indice != NAO_EXISTE && sys->tabela_produtos[indice].quantidade > 0){
+                imprimeProduto(indice, sys->tabela_produtos);
                 verifica = EXISTE;
             }
         }
+        /*Caso haja wildcards*/
+        else {
+            for (i = 0; i < sys->num_produtos; i++){
+                if (sys->tabela_produtos[i].quantidade > 0 && testaToken(token, sys->tabela_produtos[i].ean)){
+                    imprimeProduto(i, sys->tabela_produtos);
+                    verifica = EXISTE;
+                }
+            }
+        }
+
         if (verifica == 0)
             printf("%s"NO_PROD_ERR"\n", token);
         
@@ -364,27 +378,16 @@ void listaProduto(Sys *sys, char linha[]){
     }
 }
 
-/*Função auxiliar para procurar/verificar se existe um produto com um ean específico*/
-int procuraProduto(Produto tabela_produtos[], int num_prod, char ean[]){
-    int i;
-    for (i = 0; i < num_prod; i++){
-        if (strcmp(tabela_produtos[i].ean, ean) == 0) {
-            return i;
-        }
-    }
-    return NAO_EXISTE;
-}
-
 /*Função auxiliar para calcular o preco de um produto com IVA*/
-double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int num_ivas, int quant){
-    double preco = tabela_produtos[indice].preco;
+double precoIVA(Sys *sys, int indice, int quant){
+    double preco = sys->tabela_produtos[indice].preco;
     int valor_iva = 0, i;
-    char iva_char = tabela_produtos[indice].iva;
+    char iva_char = sys->tabela_produtos[indice].iva;
     
     /*Descobrir o valor do iva*/
-    for (i = 0; i < num_ivas; i++){
-        if (tabela_iva[i].c == iva_char)
-            valor_iva = tabela_iva[i].num;
+    for (i = 0; i < sys->num_ivas; i++){
+        if (sys->tabela_iva[i].c == iva_char)
+            valor_iva = sys->tabela_iva[i].num;
     }
 
     /*Calcular o preco dos produtos com a taxa de iva correspondente*/
@@ -405,11 +408,11 @@ void addCesto(Sys *sys, char linha[]){
 
         for (i = 0; i < sys->num_cesto; i++){
             /*Obter o indice do produto*/
-            indice_tabela = procuraProduto2(sys, sys->cesto[i].ean);
+            indice_tabela = procuraProduto(sys, sys->cesto[i].ean);
 
             /*Caso o indice exista calcular o preco com IVA*/
             if (indice_tabela != NAO_EXISTE){
-                preco_com_iva = precoIVA(sys->tabela_produtos, sys->tabela_iva, indice_tabela, sys->num_ivas, sys->cesto[i].quantidade);
+                preco_com_iva = precoIVA(sys, indice_tabela, sys->cesto[i].quantidade);
 
                 /*Apresentar as informações*/
                 printf("%c %.2f %d %.2f %s\n", 
@@ -458,7 +461,7 @@ void addCesto(Sys *sys, char linha[]){
     }
 
     /*Obter o indíce do produto no armazém*/
-    indice_tabela = procuraProduto(sys->tabela_produtos, sys->num_produtos, ean);
+    indice_tabela = procuraProduto(sys, ean);
 
     /*Testa se o produto existe na lista_produtos*/
     if (indice_tabela == NAO_EXISTE){
@@ -515,7 +518,7 @@ void addCesto(Sys *sys, char linha[]){
         sys->num_cesto++;
     }
     
-    preco_com_iva = precoIVA(sys->tabela_produtos, sys->tabela_iva, indice_tabela, sys->num_ivas, q_atual_cesto);
+    preco_com_iva = precoIVA(sys, indice_tabela, q_atual_cesto);
     
     if (indice_cesto == NAO_EXISTE){
         /*Se o item for novo no cesto é necessário guardá-lo no indice correspondente*/
@@ -564,7 +567,7 @@ void resumoFat(Sys *sys, char linha[]){
             return;
         }
         /*Obter o indice do produto*/
-        indice = procuraProduto(sys->tabela_produtos, sys->num_produtos, ean);
+        indice = procuraProduto(sys, ean);
 
         /*Verificar se o produto existe*/
         if (indice == NAO_EXISTE){
@@ -668,7 +671,7 @@ void fatura(Sys *sys, char linha[]){
     if (strcmp(nome, "error") == 0){
         for (j = 0; j < sys->num_cesto; j++){
             /*Procurar o indice do produto na tabela*/
-            int id_prod = procuraProduto(sys->tabela_produtos, sys->num_produtos, sys->cesto[j].ean);
+            int id_prod = procuraProduto(sys, sys->cesto[j].ean);
             if (id_prod != NAO_EXISTE){
                 sys->tabela_produtos[id_prod].vendido -= sys->cesto[j].quantidade; /*Remover as vendas*/
                 sys->tabela_produtos[id_prod].quantidade += sys->cesto[j].quantidade; /*Repor o stock*/
