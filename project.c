@@ -262,22 +262,44 @@ void addProduto(Sys *sys, char linha[]){
 
 /*Função auxiliar que tenta corresponder os tokens com codigos ean*/
 int testaToken(char *token, char *ean){
-    /*Caso base (o token e o código têm de terminar em simultâneo)*/
-    if (*token == '\0')
-        return (*ean == '\0');
+    /*O caracter '?' pode ser qualquer número que esteja naquela posição
+      O caracter '*' ignora o que vem a seguir até encontrar uma correspondência
+        exata ao que está à direita dessa instrução*/
+    int i = 0;
+    int j = 0;
+    int verificacao = 0;
+    int indice = NAO_EXISTE;
 
-    /*Caso o token seja '*'*/
-    if (*token == '*')
-        /* O token avança (1ª hipótese) ou o '*' salta um dígito do ean (2ª hipótese).
-           Testa sempre a 1ª hipótese e caso essa seja inválida testa a 2ª*/
-        return (testaToken(token + 1, ean) || 
-                (*ean != '\0' && testaToken(token, ean + 1)));
-    
-    /*Se o token for um '?' ou se o token corresponder ao digito do ean*/
-    if (*token != '\0' && (*token == '?' || *token == *ean))
-        /*Avançar um espaço para ambos*/
-        return testaToken(token + 1, ean + 1);
-    return 0;
+    while (ean[i] != '\0'){
+        /*Caso os caracteres sejam iguais ou o token tenha um '?'*/
+        if (token[j] != '\0' && (token[j] == '?' || token[j] == ean[i])){
+            i++;
+            j++;
+        }
+        /*Caso o token seja um '*', guarda-se a posicao e incrementa-se o token*/
+        else if (token[j] == '*'){
+            indice = j;
+            verificacao = i;
+            j++;
+        }
+        /*Caso não haja correspondência mas tenha sido introduzido um '*' anteriormente*/
+        else if (indice != NAO_EXISTE){
+            /*Fazer o backtracking*/
+            j = indice + 1;
+            verificacao++;
+            i = verificacao;
+        }
+        /*Caso não haja nenhuma correspondência*/
+        else {
+            return 0;
+        }
+    }
+    /*Ignorar asteriscos que estejam no fim do token*/
+    while (token[j] == '*'){
+        j++;
+    }
+    /*Se o programa chegou ao fim do token, houve correspondência*/
+    return (token[j] == '\0');
 }
 
 /*Função auxiliar para imprimir os produtos da tabela*/
@@ -883,7 +905,6 @@ void apagaRegisto(Sys *sys, char linha[]){
         }
     }
 }
-
 
 //CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas e tem de dar invalid nif
 //CORRIGIR ERRO f cliente cliente -> invalid nif
