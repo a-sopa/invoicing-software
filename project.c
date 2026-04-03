@@ -799,7 +799,7 @@ int pesquisaFat(Sys *sys, int id_input){
 
 void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
-    int input, quant, id_fatura, arg2, indice_fat, i;
+    int input, quant, id_fatura, arg2, indice_fat, i, indice_prod;
     char comando, arg1[EAN_MAX], ean[EAN_MAX];
     input = sscanf(linha, " %c %s %d", &comando, arg1, &arg2);
 
@@ -833,26 +833,57 @@ void apagaRegisto(Sys *sys, char linha[]){
         /*Atribuir os valores dos argumentos às variáveis*/
         strcpy(ean, arg1);
         quant = arg2;
-        /*Testar se a quantidade é válida (FALTA UM TESTE)*/
-        if (quant < 0){
-            printf(QUANT_ERR"\n");
-            return;
-        }
+
         /*Testar a validade do EAN*/
         if (testaEAN(ean)){
             printf(EAN_ERR"\n");
             return;
-    }
+        }
+        /*Testar se o ean corresponde a algum produto*/
+        indice_prod = NAO_EXISTE;
+        for (int i = 0; i < sys->num_produtos; i++){
+            if (strcmp(sys->tabela_produtos[i].ean, ean) == 0){
+                indice_prod = i;
+                break;
+            }
+        }
+        /*Imprimir mensagem de erro caso o ean não corresponda a um produto*/
+        if (indice_prod == NAO_EXISTE){
+            printf("%s"NO_PROD_ERR"\n", ean);
+            return;
+        }
+        /*Testar se o produto está no cesto*/
         for (int i = 0; i < sys->num_cesto; i++){
             if (strcmp(sys->cesto[i].ean, ean) == 0){
-                if (quant > sys->cesto[i].quantidade){
-                    printf(QUANT_ERR"\n");
-                    return;
-                }
+                printf(PROD_IN_USE_ERR"\n");
+                return;
             }
+        }
+
+        /*Testar se a quantidade é válida */
+        if (quant <= 0 || quant > sys->tabela_produtos[indice_prod].quantidade){
+            printf(QUANT_ERR"\n");
+            return;
+        }
+        
+        /*Retirar a quantidade indicada*/
+        sys->tabela_produtos[indice_prod].quantidade -= quant;
+
+        /*Imprimir os dados atualizados*/
+        printf("%d %s\n", 
+                sys->tabela_produtos[indice_prod].quantidade,
+                sys->tabela_produtos[indice_prod].descricao);
+        
+        /*Caso o stock seja zero, remover o produto da tabela_produtos*/
+        if (sys->tabela_produtos[indice_prod].quantidade == 0){
+            for (i = indice_prod; i < sys->num_produtos; i++){
+                sys->tabela_produtos[i] = sys->tabela_produtos[i+1];
+            }
+            sys->num_produtos--; /*Reduzir o número total de produtos*/
         }
     }
 }
+
 
 //CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas e tem de dar invalid nif
 //CORRIGIR ERRO f cliente cliente -> invalid nif
