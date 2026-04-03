@@ -130,6 +130,37 @@ int testaDescricao(char descricao[]){
     return 0;
 }
 
+/*Função auxiliar de pesquisa binária na tabela_produtos*/
+int procuraProduto2(Sys *sys, char ean[]){
+    int esq = 0; 
+    int dir = sys->num_produtos - 1;
+    int meio, indice, comparacao;
+
+    while (esq <= dir){
+        /*Obter o meio*/
+        meio = (esq + dir) / 2;
+
+        /*Retirar o indice (da ordem cronologica) do valor do meio*/
+        indice = sys->produtos_por_ean[meio];
+
+        comparacao = strcmp(sys->tabela_produtos[indice].ean, ean);
+
+        /*Caso os ean sejam iguais*/
+        if (comparacao == 0){
+            return indice;
+        }
+        /*Caso o ean seja maior que o meio*/
+        else if (comparacao < 0){
+            esq = meio + 1;
+        }
+        /*Caso o ean seja menor que o meio*/
+        else{
+            dir = meio - 1;
+        }
+    }
+    return NAO_EXISTE;
+}
+
 /*Função para adicionar o produto à tabela de produtos*/
 void addProduto(Sys *sys, char linha[]){ 
     /*Introduz um novo produto no sistema (key = p)
@@ -138,7 +169,7 @@ void addProduto(Sys *sys, char linha[]){
     /*Inicializar variáveis*/
     char comando, ean[EAN_MAX], iva, descricao[STR_MAX];
     double preco;
-    int quantidade, i, j;
+    int quantidade, i = 0, j, indice_prod, indice_ord;
 
     /*Obter o resto da linha*/
     sscanf(linha, " %c %s %c %lf %d %[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
@@ -169,27 +200,31 @@ void addProduto(Sys *sys, char linha[]){
         printf(DESC_ERR"\n");
         return;
     }
-    for (i = 0; i < sys->num_produtos; i++){
-        if(strcmp(sys->tabela_produtos[i].ean, ean) == 0){
-            /*Verificar se o preço do cesto é igual ao introduzido*/
-            if (sys->tabela_produtos[i].preco != preco){
-                for (j = 0; j < sys->num_cesto; j++){
-                    if (strcmp((sys->cesto)[j].ean, ean) == 0){
-                        printf(PROD_IN_USE_ERR"\n");
-                        return;
-                    }
+    /*Verificar se o produto já existe na tabela_produtos*/
+    indice_prod = procuraProduto2(sys, ean);
+    
+    /*O Produto já existe na tabela*/
+    if (indice_prod != NAO_EXISTE){
+        /*Verificar se o preço do cesto é igual ao introduzido*/
+        if (sys->tabela_produtos[i].preco != preco){
+            for (j = 0; j < sys->num_cesto; j++){
+                if (strcmp((sys->cesto)[j].ean, ean) == 0){
+                    printf(PROD_IN_USE_ERR"\n");
+                    return;
                 }
+            }
         }
         /*Atualizar o stock*/
         sys->tabela_produtos[i].preco = preco;
         sys->tabela_produtos[i].quantidade += quantidade;
         sys->tabela_produtos[i].iva = iva;
         strcpy(sys->tabela_produtos[i].descricao, descricao);
+
         printf("%d\n", sys->tabela_produtos[i].quantidade);
         return;
-        }       
-    }  
+    } 
 
+    /*O Produto não existe na tabela*/
     /*TESTE*/
     if (sys->num_produtos >= PROD_MAX){
         /*A quantidade de produtos excede o máximo*/
@@ -206,6 +241,25 @@ void addProduto(Sys *sys, char linha[]){
     strcpy(sys->tabela_produtos[sys->num_produtos].ean, ean);  
     strcpy(sys->tabela_produtos[sys->num_produtos].descricao, descricao); 
     
+    /*Inserir ordenado por ordem crescente de ean no array "produtos_por_ean"*/
+    indice_ord = sys->num_produtos;
+
+    /*Descobrir em que posição vai ficar o novo ean*/
+    for (i = 0; i < sys->num_produtos; i++){
+        j = sys->produtos_por_ean[i];
+        if (strcmp(sys->tabela_produtos[j].ean, ean) > 0){
+            indice_ord = i;
+            break;
+        }
+    }
+
+    /*Passar todos os outros indices para a direita*/
+    for (i = sys->num_produtos; i > indice_ord; i--){
+        sys->produtos_por_ean[i] = sys->produtos_por_ean[i+1];
+    }
+
+    sys->produtos_por_ean[indice_ord] = sys->num_produtos;
+
     sys->num_produtos++;
 
     printf("%d\n", quantidade);
