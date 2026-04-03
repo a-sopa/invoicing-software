@@ -1,33 +1,11 @@
 /* iaed26 - ist1118098 - project */
+/*Importar bibliotecas*/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
-#define EAN_MAX 14 /* Número máx de caracteres do EAN */
-#define DESC_MAX 51 /* Número máx de caracteres da descrição*/
-#define STR_MAX 65536 /* Número máx de caracteres das strings*/
-#define PROD_MAX 10000 /* Número máx de produtos*/
-#define IVA_MAX 26 /* Número máx de taxas de IVA */
-#define CONVERSAO '0' /* Constante de conversão de char para int (dígitos)*/
-#define CASAS 2 /*Número de casas decimais restantes de arredondamentos*/
-
-#define NAO_EXISTE -1 /*Estado para a não existência de um item num array*/
-#define EXISTE 1 /*Estado para a existência de um item num array*/
-
-#define EAN_ERR "invalid ean" /* Erro: EAN inválido*/
-#define IVA_ERR "invalid iva" /* Erro: IVA inválido*/
-#define PRICE_ERR "invalid price" /* Erro: preço negativo*/
-#define QUANT_ERR "invalid quantity" /* Erro: quantidade negativa*/
-#define DESC_ERR "invalid description" /* Erro: descrição demasiado longa*/
-#define PROD_IN_USE_ERR "product in use" /*Erro: produto em utilização*/
-#define PROD_ERR "invalid product" /* Erro: quantidade excedente*/
-#define NO_PROD_ERR ": no such product" /*Erro: produto não encontrado*/
-#define NO_STOCK_ERR "no stock" /*Erro: não existe stock*/
-#define NO_NIF_ERR ": no such nif" /*Erro: NIF inválido*/
-#define NAME_ERR "invalid name" /*Erro: nome inválido*/
-#define NO_CL_ERR ": no such client" /*Erro: Cliente inexistente*/
-#define NO_INVOICE ": no such invoice"
+#include "constantes.h" /*Importar a biblioteca de constantes*/
 
 typedef struct {
     double preco; 
@@ -201,7 +179,7 @@ int testaDescricao(char descricao[]){
 }
 
 /*Função para adicionar o produto à tabela de produtos*/
-int addProduto(Sys *sys, char linha[]){ 
+void addProduto(Sys *sys, char linha[]){ 
     /*Introduz um novo produto no sistema (key = p)
       p <ean> <iva> <preco> <quantidade> <descricao>  */
 
@@ -217,27 +195,27 @@ int addProduto(Sys *sys, char linha[]){
     if (testaEAN(ean)){
         /*O código EAN é inválido*/
         printf(EAN_ERR"\n");
-        return 0;
+        return;
     }
     if (testaIVA(iva, sys->tabela_iva, sys->num_ivas)){
         /*O caracter do IVA é inválido*/
         printf(IVA_ERR"\n");
-        return 0;
+        return;
     }
     if (preco <= 0){
         /*O preço é inferior/igual a 0*/
         printf(PRICE_ERR"\n");
-        return 0;
+        return;
     }
     if (quantidade < 0){
         /*A quantidade introduzida é negativa*/
         printf(QUANT_ERR"\n");
-        return 0;
+        return;
     }
     if (testaDescricao(descricao)){
         /*A descrição ultrapassa o tamanho máximo*/
         printf(DESC_ERR"\n");
-        return 0;
+        return;
     }
     for (i = 0; i < sys->num_produtos; i++){
         if(strcmp(sys->tabela_produtos[i].ean, ean) == 0){
@@ -246,7 +224,7 @@ int addProduto(Sys *sys, char linha[]){
                 for (j = 0; j < sys->num_cesto; j++){
                     if (strcmp((sys->cesto)[j].ean, ean) == 0){
                         printf(PROD_IN_USE_ERR"\n");
-                        return 0;
+                        return;
                     }
                 }
         }
@@ -256,7 +234,7 @@ int addProduto(Sys *sys, char linha[]){
         sys->tabela_produtos[i].iva = iva;
         strcpy(sys->tabela_produtos[i].descricao, descricao);
         printf("%d\n", sys->tabela_produtos[i].quantidade);
-        return 0;
+        return;
         }       
     }  
 
@@ -264,7 +242,7 @@ int addProduto(Sys *sys, char linha[]){
     if (sys->num_produtos >= PROD_MAX){
         /*A quantidade de produtos excede o máximo*/
         printf(PROD_ERR"\n");
-        return 0;
+        return;
     }
 
     /*Adicionar os valores à tabela de produtos*/
@@ -279,7 +257,7 @@ int addProduto(Sys *sys, char linha[]){
     sys->num_produtos++;
 
     printf("%d\n", quantidade);
-    return 0;
+    return;
 }
 
 /*Função auxiliar que tenta corresponder os tokens com codigos ean*/
@@ -884,7 +862,8 @@ int main(int num_palavras, char *lista_palavras[]){
     
     /*Inicializar cada um dos parâmetros de Sys*/
     sys.cesto = NULL; /*Criar a tabela com os espaços para os produtos no cesto*/
-    sys.lista_faturas = NULL; /*Criar a tabela para listar as faturas*/    
+    sys.lista_faturas = NULL; /*Criar a tabela para listar as faturas*/
+    /*Inicializar todos os contadores a 0*/    
     sys.total_faturado = 0.0;
     sys.num_produtos = 0;
     sys.num_ivas = 0;
@@ -895,6 +874,7 @@ int main(int num_palavras, char *lista_palavras[]){
     sys.total_itens_vend = 0;
     sys.num_faturas_emit = 0;
 
+    /*Obter os valores dos IVAs*/
     carregaIVA(num_palavras, lista_palavras, sys.tabela_iva, &sys.num_ivas);
 
     while(fgets(input, STR_MAX, stdin)){
@@ -922,9 +902,12 @@ int main(int num_palavras, char *lista_palavras[]){
                 break;
             case 'f': fatura(&sys, input); 
                 break;
-            case 'c': listaFat(&sys, input); break;
-            case 'd': apagaRegisto(&sys, input); break;
-            default: break;
+            case 'c': listaFat(&sys, input); 
+                break;
+            case 'd': apagaRegisto(&sys, input); 
+                break;
+            default: 
+                break;
         }
     }
     return 0;
