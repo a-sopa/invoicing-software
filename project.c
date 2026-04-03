@@ -394,51 +394,32 @@ double precoIVA(Produto tabela_produtos[], IVA tabela_iva[], int indice, int num
 /*Função para adicionar produtos ao cesto*/
 void addCesto(Sys *sys, char linha[]){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
-    int quant = 0, input = 0, indice_tabela, i, j, quant_cesto = 0, indice_cesto = NAO_EXISTE, q_atual_cesto = 0;
+    int quant = 0, input = 0, indice_tabela, i;
+    int quant_cesto = 0, indice_cesto = NAO_EXISTE, indice_ord, q_atual_cesto = 0;
     char comando, ean[EAN_MAX], arg1[EAN_MAX], arg2[EAN_MAX]; 
     double preco_com_iva;
-    Cesto temp, *cesto_ordenado;
     
     input = sscanf(linha, " %c %s %s", &comando, arg1, arg2);
 
     if (input == 1){
-        /*InsertionSort*/
-        cesto_ordenado = malloc(sys->num_cesto * sizeof(Cesto)); /*Criar uma cópia para ordenar o cesto*/
-        
-        for (i = 0; i < sys->num_cesto; i++){
-            cesto_ordenado[i] = sys->cesto[i];
-        }
-
-        for (i = 1; i < sys->num_cesto; i++){
-            temp = cesto_ordenado[i];
-            j = i - 1;
-            /*Verifica se a string da esquerda é maior do que a da direita*/
-            while (j >= 0 && strcmp(cesto_ordenado[j].ean, temp.ean) > 0){
-                /*Trocar de posições*/
-                cesto_ordenado[j+1] = cesto_ordenado[j];
-                j--;
-            }
-            /*Inserir o item temp na posição certa*/
-            cesto_ordenado[j+1] = temp;
-        }
 
         for (i = 0; i < sys->num_cesto; i++){
             /*Obter o indice do produto*/
-            indice_tabela = procuraProduto(sys->tabela_produtos, sys->num_produtos, cesto_ordenado[i].ean);
+            indice_tabela = procuraProduto2(sys, sys->cesto[i].ean);
 
             /*Caso o indice exista calcular o preco com IVA*/
             if (indice_tabela != NAO_EXISTE){
-                preco_com_iva = precoIVA(sys->tabela_produtos, sys->tabela_iva, indice_tabela, sys->num_ivas, cesto_ordenado[i].quantidade);
+                preco_com_iva = precoIVA(sys->tabela_produtos, sys->tabela_iva, indice_tabela, sys->num_ivas, sys->cesto[i].quantidade);
+
                 /*Apresentar as informações*/
                 printf("%c %.2f %d %.2f %s\n", 
                 sys->tabela_produtos[indice_tabela].iva,
                 sys->tabela_produtos[indice_tabela].preco,
-                cesto_ordenado[i].quantidade,
+                sys->cesto[i].quantidade,
                 preco_com_iva,
                 sys->tabela_produtos[indice_tabela].descricao);
             }
         }
-        free(cesto_ordenado); /*Libertar a memória do cesto_ordenado*/
         return;
     }
     else if (input == 2){
@@ -512,9 +493,23 @@ void addCesto(Sys *sys, char linha[]){
             sys->capacidade_cesto *= 2; /*Aumentar a capacidade*/
             sys->cesto = realloc(sys->cesto, sys->capacidade_cesto * sizeof(Cesto)); /*Alocar memória*/
         }
+
+        indice_ord = sys->num_cesto;
+        /*Descobrir o indice de inserção para manter o cesto ordenado*/
+        for(i = 0; i < indice_ord; i++){
+            if (strcmp(sys->cesto[i].ean, ean) > 0){
+                indice_ord = i;
+                break;
+            }
+        }
+
+        for (i = sys->num_cesto; i > indice_ord; i--){
+            sys->cesto[i] = sys->cesto[i-1];
+        }
+
         /*Inserir os dados no array cesto*/
-        strcpy(sys->cesto[sys->num_cesto].ean, ean);
-        sys->cesto[sys->num_cesto].quantidade = quant;
+        strcpy(sys->cesto[indice_ord].ean, ean);
+        sys->cesto[indice_ord].quantidade = quant;
         q_atual_cesto = quant;
 
         sys->num_cesto++;
@@ -524,7 +519,7 @@ void addCesto(Sys *sys, char linha[]){
     
     if (indice_cesto == NAO_EXISTE){
         /*Se o item for novo no cesto é necessário guardá-lo no indice correspondente*/
-        sys->cesto[sys->num_cesto - 1].preco = preco_com_iva;
+        sys->cesto[indice_ord].preco = preco_com_iva;
     }
     else{
         /*Se o produto já existia, basta apenas atualizar o valor do indice*/
