@@ -167,7 +167,7 @@ void addProduto(Sys *sys, char linha[]){
       p <ean> <iva> <preco> <quantidade> <descricao>  */
 
     /*Inicializar variáveis*/
-    char comando, ean[EAN_MAX], iva, descricao[STR_MAX];
+    char comando, ean[STR_MAX], iva, descricao[STR_MAX];
     double preco;
     int quantidade, i = 0, j, indice_prod, indice_ord;
 
@@ -399,7 +399,7 @@ void addCesto(Sys *sys, char linha[]){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
     int quant = 0, input = 0, indice_tabela, i;
     int quant_cesto = 0, indice_cesto = NAO_EXISTE, indice_ord, q_atual_cesto = 0;
-    char comando, ean[EAN_MAX], arg1[EAN_MAX], arg2[EAN_MAX]; 
+    char comando, ean[STR_MAX], arg1[STR_MAX], arg2[STR_MAX]; 
     double preco_com_iva;
     
     input = sscanf(linha, " %c %s %s", &comando, arg1, arg2);
@@ -542,7 +542,7 @@ void addCesto(Sys *sys, char linha[]){
 /*Função que imprime um resumo da faturação ao utilizador*/
 void resumoFat(Sys *sys, char linha[]){
     /*Resumo da Faturação (key = r)*/
-    char comando, ean[EAN_MAX];
+    char comando, ean[STR_MAX];
     int input = 0, indice, i = 0;
     input = sscanf(linha, "%c %s", &comando, ean);
 
@@ -829,7 +829,7 @@ int pesquisaFat(Sys *sys, int id_input){
 void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
     int input, quant, id_fatura, arg2, indice_fat, i, indice_prod, indice_rem = 0;
-    char comando, arg1[EAN_MAX], ean[EAN_MAX];
+    char comando, arg1[STR_MAX], ean[STR_MAX];
     input = sscanf(linha, " %c %s %d", &comando, arg1, &arg2);
 
     if (input == 2){
