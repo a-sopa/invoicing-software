@@ -727,7 +727,7 @@ void fatura(Sys *sys, char linha[]){
 
 void listaFat(Sys *sys, char linha[]){
     /*Lista as faturas do sistema (key = c)*/
-    char nome[DESC_MAX];
+    char nome[STR_MAX];
     int i, j, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
     Fatura *copia, temp;
 
