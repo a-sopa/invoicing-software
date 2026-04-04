@@ -641,10 +641,10 @@ int testanif(char nif[]){
 
 void fatura(Sys *sys, char linha[]){
     /*Fatura os produtos no cesto (key = f)*/
-    char nif_str[STR_MAX] = "999999999";
-    char nome[STR_MAX];
+    char nif_str[STR_MAX] = "999999999"; 
+    char nome[STR_MAX], arg1[STR_MAX], arg2[STR_MAX];
     int i = 1; /* Começa no indíce 1 para ignorar o f*/
-    int j, total_itens_fatura = 0, nif_num;
+    int j, total_itens_fatura = 0, nif_num, num_args;
     double valor_fatura = 0.0;
 
     /*Encontrar os inputs corretos*/
@@ -654,9 +654,10 @@ void fatura(Sys *sys, char linha[]){
     }
     /*Verificar se o input tem algum valor*/
     if (linha[i] != '\0'){
-        /*Se o primeiro valor for um dígito será um nif*/
-        if (isdigit(linha[i])) {
-            sscanf(&linha[i], "%s", nif_str);
+        num_args = sscanf(&linha[i], "%s %s", arg1, arg2);
+
+        if (!((linha[i] == '"' || (strncmp(&linha[i], "error", 5) == 0 && (isspace(linha[i+5]) || linha[i+5] == '\0'))) || num_args == 1)){
+            strcpy(nif_str, arg1);
             i += strlen(nif_str);
         }
     }
