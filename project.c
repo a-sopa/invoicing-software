@@ -709,7 +709,7 @@ void fatura(Sys *sys, char linha[]){
 
     sys->lista_faturas[sys->num_faturas].total_itens = total_itens_fatura; /*Guardar o numero total de itens na fatura*/
     sys->lista_faturas[sys->num_faturas].valor_total = valor_fatura; /*Guardar o valor monetário da fatura*/
-    sys->lista_faturas[sys->num_faturas].id_fatura = sys->num_faturas + 1; /*Atualizar o id da fatura*/
+    sys->lista_faturas[sys->num_faturas].id_fatura = sys->num_faturas_emit + 1; /*Atualizar o id da fatura*/
 
     /*Atualizar variáveis globais*/
     sys->total_itens_vend += total_itens_fatura; /*Atualizar o total de itens em faturas*/
