@@ -654,8 +654,11 @@ void fatura(Sys *sys, char linha[]){
     }
     /*Verificar se o input tem algum valor*/
     if (linha[i] != '\0'){
+        /*Obter o número de argumentos do input*/
         num_args = sscanf(&linha[i], "%s %s", arg1, arg2);
 
+        /*Caso o nif não tenha sido omitido (não começa por aspas, não é error e há mais do que uma palavra)
+          a primeira palavra lida é obrigatoriamente o NIF*/
         if (!((linha[i] == '"' || (strncmp(&linha[i], "error", 5) == 0 && (isspace(linha[i+5]) || linha[i+5] == '\0'))) || num_args == 1)){
             strcpy(nif_str, arg1);
             i += strlen(nif_str);
@@ -954,8 +957,7 @@ void limpaMemoria(Sys *sys){
     free(sys->cesto); /*Libertar a memória do cesto*/
 }
 
-//CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas e tem de dar invalid nif
-//CORRIGIR ERRO f cliente cliente -> invalid nif
+
 int main(int num_palavras, char *lista_palavras[]){
     Sys sys; /*Inicializar sys*/
     char input[STR_MAX]; /*Criar array para recolher o input*/
