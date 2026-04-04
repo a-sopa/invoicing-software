@@ -766,6 +766,9 @@ void listaFat(Sys *sys, char linha[]){
     /*Listar todas as faturas por ordem:
         1.ª Alfabeticamente
         2.ª Cronologicamente*/
+        if (sys->num_faturas == 0){
+            return;
+        }
         copia = malloc(sys->num_faturas * sizeof(Fatura));
 
         /*Copiar as faturas*/
@@ -925,6 +928,17 @@ void apagaRegisto(Sys *sys, char linha[]){
     }
 }
 
+/*Função auxiliar para libertar a memória dinâmica alocada*/
+void limpaMemoria(Sys *sys){
+    int i;
+    /*Libertar a memória dos nomes dos clientes*/
+    for (i = 0; i < sys->num_faturas; i++){
+        free(sys->lista_faturas[i].nome_cliente);
+    }
+    free(sys->lista_faturas); /*Libertar a memória da lista de faturas*/
+    free(sys->cesto); /*Libertar a memória do cesto*/
+}
+
 //CORRIGIR ERRO f JOAO MOUTINHO -> é necessário aspas e tem de dar invalid nif
 //CORRIGIR ERRO f cliente cliente -> invalid nif
 int main(int num_palavras, char *lista_palavras[]){
@@ -950,15 +964,9 @@ int main(int num_palavras, char *lista_palavras[]){
 
     while(fgets(input, STR_MAX, stdin)){
         switch(input[0]){
-            case 'q':{
-                int i;
-                /*Libertar a memória dos arrays dinâmicos*/
-                for (i = 0; i < sys.num_faturas; i++){
-                    free(sys.lista_faturas[i].nome_cliente);
-                }
-                free(sys.lista_faturas);
-                free(sys.cesto); 
-                return 0;}
+            case 'q':
+                limpaMemoria(&sys); 
+                return 0;
             case 'p': 
                 addProduto(&sys, input);
                 break;
