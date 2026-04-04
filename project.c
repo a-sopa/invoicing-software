@@ -624,6 +624,21 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
         }
     }
 
+int testanif(char nif[]){
+    int i = 0;
+
+    for (i = 0; nif[i] != '\0'; i++){
+        if (!isdigit(nif[i])){
+            return INVALIDO;
+        }
+    }
+    /*O NIF tem de ter obrigatoriamente 9 dígitos*/
+    if (strlen(nif) != 9 || nif[0] == '0'){
+        return INVALIDO;
+    }
+    return VALIDO;
+}
+
 void fatura(Sys *sys, char linha[]){
     /*Fatura os produtos no cesto (key = f)*/
     char nif_str[STR_MAX] = "999999999";
@@ -653,8 +668,7 @@ void fatura(Sys *sys, char linha[]){
     }
 
     /*TESTES*/
-    /*O NIF tem de ter obrigatoriamente 9 dígitos*/
-    if (strlen(nif_str) != 9 || nif_str[0] == '0'){
+    if (testanif(nif_str) == INVALIDO){
         printf("%s"NO_NIF_ERR"\n", nif_str);
         return;
     }
