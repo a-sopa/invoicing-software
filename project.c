@@ -995,7 +995,7 @@ int main(int num_palavras, char *lista_palavras[]){
     sys.num_cesto = 0;
     sys.capacidade_cesto = 0;
     sys.num_faturas = 0; 
-    sys.capacidade_faturas = 0;
+    sys.capacidade_faturas = 0; /**/
     sys.total_itens_vend = 0;
     sys.num_faturas_emit = 0;
 
