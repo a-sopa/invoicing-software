@@ -1,4 +1,11 @@
 /* iaed26 - ist1118098 - project */
+
+/**
+ * @file project.c
+ * @author Afonso Miguel Loureiro Sopa ist1118098
+ * @brief Função main()
+ */
+
 /*Importar bibliotecas*/
 #include <stdio.h>
 #include <string.h>
