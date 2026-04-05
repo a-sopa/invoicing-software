@@ -3,7 +3,7 @@
 
 #include "estruturas.h"
 
-double arredonda2(double preco);
+double arredonda(double preco);
 void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], int *numero_ivas);
 int testaEAN(char ean[]);
 void extraiNome(char linha[], int inicio, char nome[]);

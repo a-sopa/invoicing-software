@@ -35,12 +35,12 @@ void addProduto(Sys *sys, char linha[]){
     sscanf(linha, " %c %s %c %lf %d %[^\n]", &comando, ean, &iva, &preco, &quantidade, descricao);
      
     /*TESTES*/
-    if (testaEAN(ean)){
+    if (testaEAN(ean) == INVALIDO){
         /*O código EAN é inválido*/
         printf(EAN_ERR"\n");
         return;
     }
-    if (testaIVA(iva, sys->tabela_iva, sys->num_ivas)){
+    if (testaIVA(iva, sys->tabela_iva, sys->num_ivas) == INVALIDO){
         /*O caracter do IVA é inválido*/
         printf(IVA_ERR"\n");
         return;
@@ -245,7 +245,7 @@ void addCesto(Sys *sys, char linha[]){
 
     /*TESTES*/
     /*Testa se o EAN é válido*/
-    if (testaEAN(ean)){
+    if (testaEAN(ean) == INVALIDO){
         printf(EAN_ERR"\n");
         return;
     }
@@ -382,7 +382,7 @@ void resumoFat(Sys *sys, char linha[]){
     /*Caso o utilizador introduza argumentos*/
     else{
         /*TESTES*/
-        if (testaEAN(ean)){
+        if (testaEAN(ean) == INVALIDO){
             printf(EAN_ERR"\n");
             return;
         }
@@ -650,7 +650,7 @@ void apagaRegisto(Sys *sys, char linha[]){
         quant = arg2;
 
         /*Testar a validade do EAN*/
-        if (testaEAN(ean)){
+        if (testaEAN(ean) == INVALIDO){
             printf(EAN_ERR"\n");
             return;
         }

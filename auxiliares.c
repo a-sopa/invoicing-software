@@ -1,13 +1,24 @@
+/**
+ * @file auxiliares.c
+ * @author Afonso Miguel Loureiro Sopa ist1118098
+ * @brief Funções auxiliares do projeto (não reconhecidas pelo main)
+ */
+
+/*Importar bibliotecas*/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "estruturas.h"
-#include "constantes.h"
+#include "estruturas.h" /*Importar biblioteca de estruturas*/
+#include "constantes.h" /*Importar biblioteca de constantes*/
 
-/*Função auxiliar para o arredondamento de floats*/
-double arredonda2(double preco){
+/**
+ * @brief Recebe um preço (double) e arredonda-o para CASAS casas decimais.
+ * @param preco valor a arredondar.
+ * @return Retorna o preço arredondado.
+ */
+double arredonda(double preco){
     long long centimos, i;
     double preco_final, multiplicador = 1.0;
 
@@ -22,7 +33,18 @@ double arredonda2(double preco){
     return preco_final;
 }
 
-/*Função que cria a tabela dos ivas (com base num ficheiro ou default)*/
+/**
+ * @brief Cria a tabela dos ivas (com base num ficheiro ou default)
+ * *A função verifica se o programa recebe um argumento:
+ * Caso receba um argumento -> Assume que será um ficheiro. Tenta abri-lo e 
+ *  extrair o seu conteúdo (só lê conteúdo com um formato específico). Quando
+ *  o ficheiro terminar, a função ordena por ordem alfabética os IVAs
+ * Caso não receba argumentos -> Assume 4 valores default para os IVAs
+ * @param numero_palavras Número de palavras na linha de input do terminal
+ * @param lista_palavras Array com o que o utilizador introduziu no terminal
+ * @param tabela_iva Array no qual são guardados os valores do IVA
+ * @param numero_ivas Contador: número de IVAs que o programa tem 
+ */
 void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], int *numero_ivas){
     /*Função para carregar os valores dos IVAs*/
     FILE *ficheiro_ivas = NULL; /*Assumir que o ficheiro está vazio*/
@@ -71,12 +93,19 @@ void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], i
     }
 }
 
-/*Função auxiliar para testar a validade do código EAN*/
+/**
+ * @brief Testar a validade do código EAN
+ * *Testes: 
+ * - O tamanho do ean tem de ser 8 ou 13 caracteres
+ * - Verifica se o dígito de segurança é válido
+ * @param ean String de caracteres
+ * @return A validade do ean (VALIDO/INVALIDO)
+ */
 int testaEAN(char ean[]){
     int tamanho = strlen(ean), i, soma = 0, digitoVer, valor, digitoCalc;
     /*Verificar o tamanho válido*/
     if (tamanho != 13 && tamanho != 8)
-        return 1;
+        return INVALIDO;
 
     /*Converter o dígito para inteiro*/
     digitoVer = ean[tamanho - 1] - CONVERSAO;
@@ -96,20 +125,28 @@ int testaEAN(char ean[]){
     
     /*Comparar o dígito calculado com o dígito introduzido*/
     if (digitoCalc != digitoVer)
-        return 1;
+        return INVALIDO;
 
-    return 0;
+    return VALIDO;
 }
 
-/*Função auxiliar para testar o valor do IVA*/
+/**
+ * @brief Testar a validade do IVA
+ * *Testes:
+ *  - O caracter introduzido tem de estar no array
+ * @param iva Char correspondente à taxa de IVA
+ * @param tabela_iva Array com todos os ivas
+ * @param numero_ivas Contador: Número de ivas totais
+ * @return Retorna a validade do IVA (VALIDO/INVALIDO)
+ */
 int testaIVA(char iva, IVA tabela_iva[], int numero_ivas){
     int i;
     for (i = 0; i < numero_ivas; i++){
         if (iva == tabela_iva[i].c){
-            return 0;
+            return VALIDO;
         }
     }
-    return 1;
+    return INVALIDO;
 }
 
 /*Função auxiliar para testar a validade da descrição*/
@@ -226,7 +263,7 @@ double precoIVA(Sys *sys, int indice, int quant){
     }
 
     /*Calcular o preco dos produtos com a taxa de iva correspondente*/
-    return arredonda2(preco * quant * (1.0 + (valor_iva / 100.0)));
+    return arredonda(preco * quant * (1.0 + (valor_iva / 100.0)));
 }
 
 
