@@ -27,7 +27,7 @@ double arredonda(double preco){
         multiplicador *= 10.0;
     }
     /*Calcular o valor dos cêntimos (Ficar apenas com a parte inteira)*/
-    centimos = (long long)(preco * multiplicador + 0.5 + 1e-9); /*Somar 1e-9 para evitar certos erros (5.50 = 5.49999)*/
+    centimos = (long long)(preco * multiplicador + 0.5 + 1e-6); /*Somar 1e-9 para evitar certos erros (5.50 = 5.49999)*/
     preco_final = centimos / multiplicador;
 
     return preco_final;
