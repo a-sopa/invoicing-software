@@ -4,7 +4,7 @@
 #include "constantes.h" /*Importar a biblioteca de constantes*/
 
 typedef struct {
-    double preco; 
+    long double preco; 
     int quantidade;
     int vendido; /*Quantidade vendida*/
     char iva;

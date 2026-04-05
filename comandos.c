@@ -222,7 +222,7 @@ void addCesto(Sys *sys, char linha[]){
                 preco_com_iva = precoIVA(sys, indice_tabela, sys->cesto[i].quantidade);
 
                 /*Apresentar as informações*/
-                printf("%c %.2f %d %.2f %s\n", 
+                printf("%c %.2Lf %d %.2f %s\n", 
                 sys->tabela_produtos[indice_tabela].iva,
                 sys->tabela_produtos[indice_tabela].preco,
                 sys->cesto[i].quantidade,
@@ -336,7 +336,7 @@ void addCesto(Sys *sys, char linha[]){
         sys->cesto[indice_cesto].preco = preco_com_iva;
     }
 
-    printf("%c %.2f %d %.2lf %s\n", 
+    printf("%c %.2Lf %d %.2lf %s\n", 
             sys->tabela_produtos[indice_tabela].iva,
             sys->tabela_produtos[indice_tabela].preco,
             q_atual_cesto,
@@ -347,7 +347,14 @@ void addCesto(Sys *sys, char linha[]){
 }
 
 /**
- * @brief Comando: 'r' -> Imprime um resumo da faturação
+ * @brief Comando: 'r' -> Imprime um resumo da faturação total ou de um produto específico
+ * *Se a função for invocada sem argumentos, imprime as estatísticas globais:
+ *      <total de itens vendidos> <número de faturas emitidas> <valor total faturado>;
+ *  Caso seja invocada com um argumento, esse será o EAN (caso seja inválido será apresentada
+ * uma mensagem de erro) e a função vai imprimir: 
+ *      <quantidade-disponível> <quantidade-vendida> <descrição>, relativo ao produto.
+ *  Independentemente do número de argumentos, depois de cada instrução são apresentadas 
+ * todas as taxas de IVAs
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos
  * @param linha String com a linha de input completa introduzida pelo utilizador*/ 
 void resumoFat(Sys *sys, char linha[]){
@@ -397,6 +404,10 @@ void resumoFat(Sys *sys, char linha[]){
     }   
 }
 
+/**
+ * @brief Comando: 'f' -> Fatura todos os produtos que estão no cesto
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos e o cesto
+ * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void fatura(Sys *sys, char linha[]){
     /*Fatura os produtos no cesto (key = f)*/
     char nif_str[STR_MAX] = "999999999"; 

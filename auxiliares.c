@@ -204,7 +204,7 @@ int testaToken(char *token, char *ean){
 
 /*Função auxiliar para imprimir os produtos da tabela*/
 void imprimeProduto(int indice, Produto tabela_produtos[]){
-    printf("%s %c %.2f %d %d %s\n",
+    printf("%s %c %.2Lf %d %d %s\n",
         tabela_produtos[indice].ean,
         tabela_produtos[indice].iva,
         tabela_produtos[indice].preco,
