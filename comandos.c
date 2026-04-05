@@ -1,14 +1,27 @@
+/**
+ * @file comandos.c
+ * @author Afonso Miguel Loureiro Sopa ist1118098
+ * @brief Este ficheiro contém os comandos principais
+ */
+
+/*Importar bibliotecas*/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "comandos.h"
-#include "auxiliares.h"
-#include "constantes.h"
-#include "estruturas.h"
+#include "comandos.h" /*Importar a biblioteca das funções de comando*/
+#include "auxiliares.h" /*Importar a biblioteca de funções auxiliares*/
+#include "constantes.h" /*Importar a biblioteca de constantes*/
+#include "estruturas.h" /*Importar a biblioteca de estruturas*/
 
-/*Função para adicionar o produto à tabela de produtos*/
+/**
+ * @brief Comando: 'p' -> Adiciona o produto à tabela de produtos
+ * * A função divide a linha (input) em vários argumentos: EAN, IVA, preço, quantidade e 
+ * descrição do produto. Realiza testes para validar todos os parâmetros, devolvendo mensagens
+ * de erro caso sejam inválidos, para depois guardar o produto no array tabela_produtos.
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos 
+ * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void addProduto(Sys *sys, char linha[]){ 
     /*Introduz um novo produto no sistema (key = p)
       p <ean> <iva> <preco> <quantidade> <descricao>  */
@@ -113,7 +126,14 @@ void addProduto(Sys *sys, char linha[]){
     return;
 }
 
-/*Função para imprimir os produtos listados pelo utilizador*/
+/**
+ * @brief Comando: 'l' -> Imprime os produtos listados pelo utilizador
+ * *Se a função apenas recebe o 'l' sem argumentos imprime todos os produtos da 
+ * tabela_produtos com quantidade superior a zero. Caso seja inserido um ou mais códigos 
+ * EAN como argumento (podendo incluir os wildcards '?' e '*'), a função procura e imprime
+ * apenas os produtos com os códigos EAN correspondentes. 
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos 
+ * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void listaProduto(Sys *sys, char linha[]){
     /*Imprime a info de todos os produtos (key = l)*/
     char *token, delimitadores[] = " \n\t";
@@ -168,11 +188,20 @@ void listaProduto(Sys *sys, char linha[]){
         if (verifica == 0)
             printf("%s"NO_PROD_ERR"\n", token);
         
+        /*Voltar a cortar a string à procura de mais argumentos*/
         token = strtok(NULL, delimitadores);
     }
 }
 
-/*Função para adicionar produtos ao cesto*/
+/**
+ * @brief Comando: 'a' -> Adiciona produtos ao cesto 
+ * *A função processa a string de entrada do utilizador e extrai o EAN e a quantidade (quando não 
+ * introduzida adiciona-se 1 unidade). De seguida, verifica se o produto existe no sistema e se a
+ * sua quantidade em stock é suficiente. Após passar as validações, o produto é adicionado ao cesto
+ * (ou a sua quantidade é atualizada, caso já tenha sido adicionado anteriormente), e o stock do
+ * produto é reduzido. Caso o cesto atinja a sua capacidade máxima, a memória alocada é expandida.
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos e o cesto
+ * @param linha String com a linha de input completa introduzida pelo utilizador*/ 
 void addCesto(Sys *sys, char linha[]){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
     int quant = 0, input = 0, indice_tabela, i;
@@ -317,7 +346,10 @@ void addCesto(Sys *sys, char linha[]){
     return;
 }
 
-/*Função que imprime um resumo da faturação ao utilizador*/
+/**
+ * @brief Comando: 'r' -> Imprime um resumo da faturação
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos
+ * @param linha String com a linha de input completa introduzida pelo utilizador*/ 
 void resumoFat(Sys *sys, char linha[]){
     /*Resumo da Faturação (key = r)*/
     char comando, ean[STR_MAX];
@@ -327,12 +359,15 @@ void resumoFat(Sys *sys, char linha[]){
     /*Caso o utilizador não introduza argumentos */
     if (input == 1){
         /*num total itens comprados | numero total faturas emitidas | valor total faturado*/
-        printf("%d %d %.2f\n", sys->total_itens_vend, sys->num_faturas_emit, sys->total_faturado);
+        printf("%d %d %.2f\n", 
+            sys->total_itens_vend, 
+            sys->num_faturas_emit, 
+            sys->total_faturado);
         /*Imprimir a tabela de ivas*/
         for (i = 0; i < sys->num_ivas; i++){
             printf("%c %d%%\n", 
-            sys->tabela_iva[i].c,
-            sys->tabela_iva[i].num);
+                sys->tabela_iva[i].c,
+                sys->tabela_iva[i].num);
         }
         return;
     } 
