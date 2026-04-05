@@ -16,7 +16,7 @@
 #include "estruturas.h" /*Importar a biblioteca de estruturas*/
 
 /**
- * @brief Comando: 'p' -> Adiciona o produto à tabela de produtos
+ * @brief Comando: 'p' -> Adiciona o produto à tabela de produtos.
  * * A função divide a linha (input) em vários argumentos: EAN, IVA, preço, quantidade e 
  * descrição do produto. Realiza testes para validar todos os parâmetros, devolvendo mensagens
  * de erro caso sejam inválidos, para depois guardar o produto no array tabela_produtos.
@@ -127,7 +127,7 @@ void addProduto(Sys *sys, char linha[]){
 }
 
 /**
- * @brief Comando: 'l' -> Imprime os produtos listados pelo utilizador
+ * @brief Comando: 'l' -> Imprime os produtos listados pelo utilizador.
  * *Se a função apenas recebe o 'l' sem argumentos imprime todos os produtos da 
  * tabela_produtos com quantidade superior a zero. Caso seja inserido um ou mais códigos 
  * EAN como argumento (podendo incluir os wildcards '?' e '*'), a função procura e imprime
@@ -194,7 +194,7 @@ void listaProduto(Sys *sys, char linha[]){
 }
 
 /**
- * @brief Comando: 'a' -> Adiciona produtos ao cesto 
+ * @brief Comando: 'a' -> Adiciona produtos ao cesto.
  * *A função processa a string de entrada do utilizador e extrai o EAN e a quantidade (quando não 
  * introduzida adiciona-se 1 unidade). De seguida, verifica se o produto existe no sistema e se a
  * sua quantidade em stock é suficiente. Após passar as validações, o produto é adicionado ao cesto
@@ -347,7 +347,7 @@ void addCesto(Sys *sys, char linha[]){
 }
 
 /**
- * @brief Comando: 'r' -> Imprime um resumo da faturação total ou de um produto específico
+ * @brief Comando: 'r' -> Imprime um resumo da faturação total ou de um produto específico.
  * *Se a função for invocada sem argumentos, imprime as estatísticas globais:
  *      <total de itens vendidos> <número de faturas emitidas> <valor total faturado>;
  *  Caso seja invocada com um argumento, esse será o EAN (caso seja inválido será apresentada
@@ -405,7 +405,13 @@ void resumoFat(Sys *sys, char linha[]){
 }
 
 /**
- * @brief Comando: 'f' -> Fatura todos os produtos que estão no cesto
+ * @brief Comando: 'f' -> Fatura todos os produtos que estão no cesto.
+ * *A função divide o input em <nif> e <nome-de-cliente> (em caso de omissão nome = "Cliente final" e 
+ * nif = "999999999"). Valida o nif e o formato do nome. Se o nome introduzido seja "error", a 
+ * operação é anulada: o conteúdo do cesto é apagado e o stock volta para a tabela_produtos.
+ * Caso contrário, calcula a quantidade e valor total, expande (se necessário) o tamanho do array
+ * dinâmico das faturas (realloc) e aloca a memória exata para o nome do cliente (malloc).
+ * Por último, guarda a fatura, atualiza as variáveis globais e esvazia o cesto. 
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos e o cesto
  * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void fatura(Sys *sys, char linha[]){
@@ -512,6 +518,16 @@ void fatura(Sys *sys, char linha[]){
     return;
 }
 
+/**
+ * @brief Comando: 'c' -> Lista as faturas já emitidas no sistema.
+ * *A função percorre o array dinâmico lista_faturas e imprime os detalhes correspondentes às mesmas.
+ * Se for invocada sem argumentos "c", lista todas as faturas emitidas por ordem alfabética (se o nome
+ * for igual, o desempate é pela ordem cronológica).
+ * Caso tenha um argumento, esse será o <nome> e vai pesquisar todas as faturas com esse nome.
+ * A função verifica a validade do nome e se existe nas faturas. Por último imprime as informações a cerca
+ * das faturas <número-factura> <valor-facturado> <nome-cliente>.
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém a lista_faturas e variáveis globais
+ * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void listaFat(Sys *sys, char linha[]){
     /*Lista as faturas do sistema (key = c)*/
     char nome[STR_MAX];
@@ -586,7 +602,16 @@ void listaFat(Sys *sys, char linha[]){
     return;    
 }
 
-
+/**
+ * @brief Comando: 'd' -> Apaga o produto ou fatura do sistema.
+ * A função, se ler um ID (1 argumento), localiza a fatura, de seguida reverte os seus valores 
+ * nos totais do sistema, liberta a memória dinâmica do nome do cliente e remove-a do array. 
+ * Caso seja passado um EAN e uma quantidade (2 argumentos), a função valida os dados e reduz 
+ * o stock do produto (garantindo que este não se encontra em uso no cesto). 
+ * Se o stock atinjir zero, o produto é permanentemente apagado da tabela principal e os 
+ * índices do array auxiliar ordenado são recalculados. 
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém as listas de faturas e produtos
+ * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
     int input, quant, id_fatura, arg2, indice_fat, i, indice_prod, indice_rem = 0;
