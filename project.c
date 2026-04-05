@@ -29,20 +29,8 @@ int main(int num_palavras, char *lista_palavras[]){
     Sys sys; /*Inicializar sys*/
     char input[STR_MAX]; /*Criar array para recolher o input*/
     
-    /*Inicializar cada um dos parâmetros de Sys*/
-    sys.cesto = NULL; /*Criar a tabela com os espaços para os produtos no cesto*/
-    sys.lista_faturas = NULL; /*Criar a tabela para listar as faturas*/
-    /*Inicializar todos os contadores a 0*/    
-    sys.total_faturado = 0.0;
-    sys.num_produtos = 0;
-    sys.num_ivas = 0;
-    sys.num_cesto = 0;
-    sys.capacidade_cesto = 0;
-    sys.num_faturas = 0; 
-    sys.capacidade_faturas = 0;
-    sys.total_itens_vend = 0;
-    sys.num_faturas_emit = 0;
-
+    /*Inicializar o Sistema*/
+    inicializaSistema(&sys);
     /*Obter os valores dos IVAs*/
     carregaIVA(num_palavras, lista_palavras, sys.tabela_iva, &sys.num_ivas);
 

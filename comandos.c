@@ -55,7 +55,7 @@ void addProduto(Sys *sys, char linha[]){
         printf(QUANT_ERR"\n");
         return;
     }
-    if (testaDescricao(descricao)){
+    if (testaDescricao(descricao) == INVALIDO){
         /*A descrição ultrapassa o tamanho máximo*/
         printf(DESC_ERR"\n");
         return;

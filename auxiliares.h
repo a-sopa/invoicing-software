@@ -3,6 +3,7 @@
 
 #include "estruturas.h"
 
+void inicializaSistema(Sys *sys);
 double arredonda(double preco);
 void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], int *numero_ivas);
 int testaEAN(char ean[]);

@@ -14,6 +14,25 @@
 #include "constantes.h" /*Importar biblioteca de constantes*/
 
 /**
+ * @brief Inicializa todas as variáveis globais do projeto.
+ * @param sys Ponteiro para a estrutura principal do Sistema*/
+void inicializaSistema(Sys *sys){
+    /*Inicializar cada um dos parâmetros de Sys*/
+    sys->cesto = NULL; /*Criar a tabela com os espaços para os produtos no cesto*/
+    sys->lista_faturas = NULL; /*Criar a tabela para listar as faturas*/
+    /*Inicializar todos os contadores a 0*/    
+    sys->total_faturado = 0.0;
+    sys->num_produtos = 0;
+    sys->num_ivas = 0;
+    sys->num_cesto = 0;
+    sys->capacidade_cesto = 0;
+    sys->num_faturas = 0; 
+    sys->capacidade_faturas = 0;
+    sys->total_itens_vend = 0;
+    sys->num_faturas_emit = 0;
+}
+
+/**
  * @brief Recebe um preço (double) e arredonda-o para CASAS casas decimais.
  * @param preco valor a arredondar.
  * @return Retorna o preço arredondado.
@@ -39,7 +58,7 @@ double arredonda(double preco){
  * Caso receba um argumento -> Assume que será um ficheiro. Tenta abri-lo e 
  *  extrair o seu conteúdo (só lê conteúdo com um formato específico). Quando
  *  o ficheiro terminar, a função ordena por ordem alfabética os IVAs
- * Caso não receba argumentos -> Assume 4 valores default para os IVAs
+ * Caso não receba argumentos -> Assume 4 valores default para os IVAs.
  * @param numero_palavras Número de palavras na linha de input do terminal
  * @param lista_palavras Array com o que o utilizador introduziu no terminal
  * @param tabela_iva Array no qual são guardados os valores do IVA
@@ -94,7 +113,7 @@ void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], i
 }
 
 /**
- * @brief Testar a validade do código EAN
+ * @brief Testar a validade do código EAN.
  * *Testes: 
  * - O tamanho do ean tem de ser 8 ou 13 caracteres
  * - Verifica se o dígito de segurança é válido
@@ -131,7 +150,7 @@ int testaEAN(char ean[]){
 }
 
 /**
- * @brief Testar a validade do IVA
+ * @brief Testar a validade do IVA.
  * *Testes:
  *  - O caracter introduzido tem de estar no array
  * @param iva Char correspondente à taxa de IVA
@@ -149,22 +168,35 @@ int testaIVA(char iva, IVA tabela_iva[], int numero_ivas){
     return INVALIDO;
 }
 
-/*Função auxiliar para testar a validade da descrição*/
+/**
+ * @brief Testa a validade da descrição.
+ * *Testes:
+ *  - A primeira letra é maiúscula
+ *  - O comprimento é menor que DESC_MAX 
+ * @param descricao String composta por caracteres e espaços
+ * @return Retorna a validade da descricao (VALIDO/INVALIDO) 
+ */
 int testaDescricao(char descricao[]){
     /*Verifica se começa com maiuscula*/
     unsigned char primeira = (unsigned char)descricao[0];
     if (descricao[0] < 'A' || descricao[0] > 'Z')
         if (primeira <= 128)
-            return 1;
+            return INVALIDO;
 
     /*Verifica se a descricao tem menos de 50 bytes*/
     if (strlen(descricao) >= DESC_MAX)
-        return 1;
+        return INVALIDO;
 
-    return 0;
+    return VALIDO;
 }
 
-/*Função auxiliar de pesquisa binária na tabela_produtos*/
+/**
+ * @brief Pesquisa na tabela_produtos
+ * * Esta função utiliza pesquisa binária para procurar o produto.
+ * @param sys Ponteiro para a estrutura principal do Sistema
+ * @param ean String de caracteres
+ * @return indice do produto (-1 caso não exista)
+ */
 int procuraProduto(Sys *sys, char ean[]){
     int esq = 0; 
     int dir = sys->num_produtos - 1;
@@ -195,12 +227,15 @@ int procuraProduto(Sys *sys, char ean[]){
     return NAO_EXISTE;
 }
 
-
-/*Função auxiliar que tenta corresponder os tokens com codigos ean*/
+/**
+ * @brief Tenta corresponder os tokens com codigos ean.
+ * * O caracter '?' pode ser qualquer número que esteja naquela posição
+     O caracter '*' ignora o que vem a seguir até encontrar uma correspondência
+        exata ao que está à direita dessa instrução
+ * @param token String de caracteres correspondente a parte do input
+ * @param ean String à qual queremos corresponder
+ */
 int testaToken(char *token, char *ean){
-    /*O caracter '?' pode ser qualquer número que esteja naquela posição
-      O caracter '*' ignora o que vem a seguir até encontrar uma correspondência
-        exata ao que está à direita dessa instrução*/
     int i = 0;
     int j = 0;
     int verificacao = 0;
@@ -227,7 +262,7 @@ int testaToken(char *token, char *ean){
         }
         /*Caso não haja nenhuma correspondência*/
         else {
-            return 0;
+            return INVALIDO;
         }
     }
     /*Ignorar asteriscos que estejam no fim do token*/
@@ -238,8 +273,11 @@ int testaToken(char *token, char *ean){
     return (token[j] == '\0');
 }
 
-
-/*Função auxiliar para imprimir os produtos da tabela*/
+/**
+ * @brief Imprime os produtos da tabela_produtos.
+ * @param indice Inteiro correspondente ao índice na tabela
+ * @param tabela_produtos Array que contém a informação a ser impressa
+ */
 void imprimeProduto(int indice, Produto tabela_produtos[]){
     printf("%s %c %.2Lf %d %d %s\n",
         tabela_produtos[indice].ean,
@@ -250,7 +288,13 @@ void imprimeProduto(int indice, Produto tabela_produtos[]){
         tabela_produtos[indice].descricao);
 }
 
-/*Função auxiliar para calcular o preco de um produto com IVA*/
+/**
+ * @brief Calcula o preco de um produto com IVA.
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos
+ * @param indice Inteiro correspondente ao indice no array
+ * @param quant Inteiro correspondente à quantidade de produto
+ * @return Valor arredondado do preco já com o IVA
+ */
 double precoIVA(Sys *sys, int indice, int quant){
     double preco = sys->tabela_produtos[indice].preco;
     int valor_iva = 0, i;
@@ -266,7 +310,17 @@ double precoIVA(Sys *sys, int indice, int quant){
     return arredonda(preco * quant * (1.0 + (valor_iva / 100.0)));
 }
 
-
+/**
+ * @brief Retira o nome da linha de input
+ * * A função avança na string a partir de um índice inicial, ignorando espaços em branco. 
+ * Se o nome estiver delimitado por aspas (""), extrai apenas o conteúdo interno. 
+ * Caso as aspas não sejam fechadas pelo utilizador, invalida a leitura (retornando "!"). 
+ * Se o nome não contiver aspas, copia o restante texto até ao fim da linha.  
+ * Se não encontrar nenhum argumento retorna uma string vazia.
+ * @param linha String com a linha de input completa introduzida pelo utilizador
+ * @param indice_i Inteiro com o indice inicial
+ * @param nome_final String onde se vai armazenar o nome
+ */
 void extraiNome(char linha[], int indice_i, char nome_final[]){
     int i = indice_i;
     int p = 0;
@@ -296,21 +350,29 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
         }
         nome_final[p] = '\0'; /*Fechar a string*/
     }
-        else{
-            /*Caso o nome não esteja delimitado por aspas*/
-            strcpy(nome_final, &linha[i]);
+    else{
+        /*Caso o nome não esteja delimitado por aspas*/
+        strcpy(nome_final, &linha[i]);
 
-            /*Limpar o fim da string*/
-            int len = strlen(nome_final);
-            if (len > 0 && nome_final[len-1] == '\n')
-                nome_final[len-1] = '\0';
-        }
+        /*Limpar o fim da string*/
+        int len = strlen(nome_final);
+        if (len > 0 && nome_final[len-1] == '\n')
+            nome_final[len-1] = '\0';
     }
+}
 
-
+/**
+ * @brief Testa a validade do nif
+ * *Testes:
+ *   - O nif só pode ter dígitos
+ *   - O comprimento do nif tem de ser 9
+ *   - O nif não pode começar por '0'
+ * @param nif String que inclui o nif
+ * @return Validade do nif (VALIDO/INVALIDO)
+ */
 int testanif(char nif[]){
     int i = 0;
-
+    /*Verificar se o nif tem algum caracter que não seja um digito*/
     for (i = 0; nif[i] != '\0'; i++){
         if (!isdigit(nif[i])){
             return INVALIDO;
@@ -322,7 +384,6 @@ int testanif(char nif[]){
     }
     return VALIDO;
 }
-
 
 /*Função auxiliar que realiza pesquisa binária segundo o id de fatura*/
 int pesquisaFat(Sys *sys, int id_input){
@@ -361,4 +422,3 @@ void limpaMemoria(Sys *sys){
     free(sys->lista_faturas); /*Libertar a memória da lista de faturas*/
     free(sys->cesto); /*Libertar a memória do cesto*/
 }
-
