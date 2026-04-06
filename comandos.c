@@ -102,8 +102,7 @@ void addCesto(Sys *sys, char linha[]){
                 /*Apresentar as informações*/
                 listaCesto(sys, indice_tabela, sys->cesto[i].quantidade, preco_com_iva);
             }
-        }
-        return;
+        } return;
     }
     else if (input == 2){
         /*O utilizador não inseriu a quantidade*/
@@ -115,22 +114,18 @@ void addCesto(Sys *sys, char linha[]){
         quant = atoi(arg1); /*Converter o arg1 para inteiro*/
         strcpy(ean, arg2); /*Copiar o arg2 para o ean*/
     }
-    if (validaCesto(sys, ean, quant, &indice_tabela, &indice_cesto) == INVALIDO){
-        return;
-    };
+    if (validaCesto(sys, ean, quant, &indice_tabela, &indice_cesto) == INVALIDO) return;
     /*-------------------------------------------*/
     /*Atualizar stock na tabela_produtos (remover quant) e a quantidade vendida*/
     sys->tabela_produtos[indice_tabela].quantidade -= quant;
     sys->tabela_produtos[indice_tabela].vendido += quant;
 
     /*Caso o item já esteja no cesto*/
-    if (indice_cesto != NAO_EXISTE){
+    if (indice_cesto != NAO_EXISTE)
         atualizaCesto(sys, indice_tabela, indice_cesto, quant); /*Atualizar a quantidade*/
-    }
     /*Caso o item não exista no cesto*/
-    else if (indice_cesto == NAO_EXISTE){
+    else if (indice_cesto == NAO_EXISTE)
         insereCesto(sys, indice_tabela, ean, quant); /*Inserir no cesto*/
-    }
 }
 
 /**
@@ -157,26 +152,21 @@ void resumoFat(Sys *sys, char linha[]){
             sys->num_faturas_emit, 
             sys->total_faturado);
         /*Imprimir a tabela de ivas*/
-        for (i = 0; i < sys->num_ivas; i++){
-            printf("%c %d%%\n", 
-                sys->tabela_iva[i].c,
-                sys->tabela_iva[i].num);
-        }
+        for (i = 0; i < sys->num_ivas; i++)
+            printf("%c %d%%\n", sys->tabela_iva[i].c, sys->tabela_iva[i].num);
         return;
     }
     /*Caso o utilizador introduza argumentos*/
     else{
         /*TESTES*/
         if (testaEAN(ean) == INVALIDO){
-            printf(EAN_ERR"\n");
-            return;
+            printf(EAN_ERR"\n"); return;
         }
         /*Obter o indice do produto*/
         indice = procuraProduto(sys, ean);
         /*Verificar se o produto existe*/
         if (indice == NAO_EXISTE){
-            printf("%s"NO_PROD_ERR"\n", ean);
-            return;
+            printf("%s"NO_PROD_ERR"\n", ean); return;
         }
         /*Imprimir os dados sobre o produto*/
         printf("%d %d %s\n", 
@@ -223,9 +213,9 @@ void fatura(Sys *sys, char linha[]){
     /*Caso o nome seja omitido e o nif seja default assumir o nome: Cliente final*/
     if (strlen(nome) == 0 && strcmp(nif_str, "999999999") == 0)
         strcpy(nome, "Cliente final");
+
     /*Testar a validade do nif e do nome*/
-    if (testaInputFatura(nif_str, nome) == INVALIDO)
-        return;
+    if (testaInputFatura(nif_str, nome) == INVALIDO) return;
 
     /*"Converter" o NIF para inteiro*/
     nif_num = atoi(nif_str);
@@ -233,6 +223,7 @@ void fatura(Sys *sys, char linha[]){
     if (strcmp(nome, "error") == 0)
         apagaCesto(sys);
     /*Calcular os valores totais*/
+
     for (i = 0; i < sys->num_cesto; i++){
         if (sys->cesto[i].quantidade > 0){
             total_itens_fatura += sys->cesto[i].quantidade;

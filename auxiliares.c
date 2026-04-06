@@ -809,9 +809,9 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
     char *temp_nome;
     /*Reservar memória*/
     if (sys->num_faturas >= sys->capacidade_faturas){
-        if (sys->capacidade_faturas == 0){
+        if (sys->capacidade_faturas == 0)
             sys->capacidade_faturas += 2;
-        }
+
         /*Realocar novo espaço de memória*/
         (sys->capacidade_faturas) *= 2; /*Atualizar a capacidade*/
         temp_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
@@ -825,14 +825,16 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
     /*Reservar espaço de memória para o nome cliente*/
     temp_nome = malloc(strlen(nome) + 1);
     if (temp_nome == NULL){
-        printf(NO_MEMORY"\n"); exit(0);;
+        printf(NO_MEMORY"\n"); exit(0);
     }
+
     sys->lista_faturas[sys->num_faturas].nome_cliente = temp_nome;
     strcpy(sys->lista_faturas[sys->num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
 
     sys->lista_faturas[sys->num_faturas].total_itens = total_itens; /*Guardar o numero total de itens na fatura*/
     sys->lista_faturas[sys->num_faturas].valor_total = valor_fatura; /*Guardar o valor monetário da fatura*/
     sys->lista_faturas[sys->num_faturas].id_fatura = sys->num_faturas_emit + 1; /*Atualizar o id da fatura*/
+
     sys->total_itens_vend += total_itens; /*Atualizar o total de itens em faturas*/
     sys->total_faturado += valor_fatura; /*Atualizar o valor total monetário em faturas*/
     /*Emitir Fatura*/
