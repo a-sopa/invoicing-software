@@ -243,7 +243,6 @@ void fatura(Sys *sys, char linha[]){
 
     /*"Converter" o NIF para inteiro*/
     nif_num = atoi(nif_str);
-
     /*Caso o nome seja "error"*/
     if (strcmp(nome, "error") == 0)
         apagaCesto(sys);

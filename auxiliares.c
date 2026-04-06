@@ -586,7 +586,7 @@ void insereCesto(Sys *sys, int indice_tabela, char ean[], int quant){
         temp_cesto = realloc(sys->cesto, sys->capacidade_cesto * sizeof(Cesto)); /*Alocar memória*/
         if (temp_cesto == NULL){
             printf(NO_MEMORY"\n");
-            return;
+            exit(0);;
         }
         sys->cesto = temp_cesto;
     }
@@ -601,7 +601,6 @@ void insereCesto(Sys *sys, int indice_tabela, char ean[], int quant){
     for (i = sys->num_cesto; i > indice_ord; i--){
         sys->cesto[i] = sys->cesto[i-1];
     }
-
     /*Inserir os dados no array cesto*/
     strcpy(sys->cesto[indice_ord].ean, ean);
     sys->cesto[indice_ord].quantidade = quant;
@@ -664,6 +663,11 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
     }
 }
 
+/**
+ * @brief Procura e imprime as faturas de um cliente específico.
+ * @param sys Ponteiro para a estrutura principal do Sistema
+ * @param nome Nome do cliente
+ */
 void listaFatNome(Sys *sys, char nome[]){
     int i, validacao = NAO_EXISTE;
     
@@ -688,6 +692,10 @@ void listaFatNome(Sys *sys, char nome[]){
     }
 }
 
+/**
+ * @brief Ordena alfabeticamente uma cópia das faturas e imprime.
+ * @param sys Ponteiro para a estrutura principal do Sistema
+ */
 void listaTodasFat(Sys *sys){
     Fatura *copia, temp;
     int i, j;
@@ -700,7 +708,7 @@ void listaTodasFat(Sys *sys){
         copia = malloc(sys->num_faturas * sizeof(Fatura));
         if (copia == NULL){
             printf(NO_MEMORY"\n");
-            return;
+            exit(0);;
         }
 
         /*Copiar as faturas*/
@@ -725,7 +733,6 @@ void listaTodasFat(Sys *sys){
                 copia[i].valor_total,
                 copia[i].nome_cliente);
         }
-        
         free(copia);
 }
 
@@ -813,7 +820,7 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
         temp_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
         if (temp_faturas == NULL){
             printf(NO_MEMORY"\n");
-            return;
+            exit(0);
         }
         sys->lista_faturas = temp_faturas;
     }
@@ -823,7 +830,7 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
     temp_nome = malloc(strlen(nome) + 1);
     if (temp_nome == NULL){
         printf(NO_MEMORY"\n");
-        return;
+        exit(0);;
     }
     sys->lista_faturas[sys->num_faturas].nome_cliente = temp_nome;
     strcpy(sys->lista_faturas[sys->num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
@@ -831,7 +838,6 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
     sys->lista_faturas[sys->num_faturas].total_itens = total_itens; /*Guardar o numero total de itens na fatura*/
     sys->lista_faturas[sys->num_faturas].valor_total = valor_fatura; /*Guardar o valor monetário da fatura*/
     sys->lista_faturas[sys->num_faturas].id_fatura = sys->num_faturas_emit + 1; /*Atualizar o id da fatura*/
-
     sys->total_itens_vend += total_itens; /*Atualizar o total de itens em faturas*/
     sys->total_faturado += valor_fatura; /*Atualizar o valor total monetário em faturas*/
 
