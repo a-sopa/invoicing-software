@@ -1,3 +1,4 @@
+/* iaed26 - ist1118098 - project */
 /**
  * @file auxiliares.c
  * @author Afonso Miguel Loureiro Sopa ist1118098

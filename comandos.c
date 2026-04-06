@@ -1,3 +1,4 @@
+/* iaed26 - ist1118098 - project */
 /**
  * @file comandos.c
  * @author Afonso Miguel Loureiro Sopa ist1118098
@@ -206,7 +207,6 @@ void fatura(Sys *sys, char linha[]){
 
     while (isspace(linha[i]))
         i++; /*Incrementar o i até encontrar algo que não seja espaço*/
-
     /*Verificar se o input tem algum valor*/
     if (linha[i] != '\0'){
         /*Obter o número de argumentos do input*/

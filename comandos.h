@@ -1,3 +1,10 @@
+/* iaed26 - ist1118098 - project */
+/**
+ * @file auxiliares.h
+ * @author Afonso Miguel Loureiro Sopa ist1118098
+ * @brief ~Protótipos das funções comando
+ */
+
 #ifndef COMANDOS_H
 #define COMANDOS_H
 
