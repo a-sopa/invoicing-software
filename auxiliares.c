@@ -585,8 +585,7 @@ void insereCesto(Sys *sys, int indice_tabela, char ean[], int quant){
         sys->capacidade_cesto *= 2; /*Aumentar a capacidade*/
         temp_cesto = realloc(sys->cesto, sys->capacidade_cesto * sizeof(Cesto)); /*Alocar memória*/
         if (temp_cesto == NULL){
-            printf(NO_MEMORY"\n");
-            exit(0);;
+            printf(NO_MEMORY"\n"); exit(0);
         }
         sys->cesto = temp_cesto;
     }
@@ -707,8 +706,7 @@ void listaTodasFat(Sys *sys){
         }
         copia = malloc(sys->num_faturas * sizeof(Fatura));
         if (copia == NULL){
-            printf(NO_MEMORY"\n");
-            exit(0);
+            printf(NO_MEMORY"\n"); exit(0);
         }
         /*Copiar as faturas*/
         for (i = 0; i < sys->num_faturas; i++){
@@ -817,8 +815,7 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
         (sys->capacidade_faturas) *= 2; /*Atualizar a capacidade*/
         temp_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
         if (temp_faturas == NULL){
-            printf(NO_MEMORY"\n");
-            exit(0);
+            printf(NO_MEMORY"\n"); exit(0);
         }
         sys->lista_faturas = temp_faturas;
     }
@@ -827,8 +824,7 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
     /*Reservar espaço de memória para o nome cliente*/
     temp_nome = malloc(strlen(nome) + 1);
     if (temp_nome == NULL){
-        printf(NO_MEMORY"\n");
-        exit(0);;
+        printf(NO_MEMORY"\n"); exit(0);;
     }
     sys->lista_faturas[sys->num_faturas].nome_cliente = temp_nome;
     strcpy(sys->lista_faturas[sys->num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
@@ -923,7 +919,7 @@ static int testeRemoveProduto(Sys *sys, char ean[], int quant){
     /*Testar a validade do EAN*/
     if (testaEAN(ean) == INVALIDO){
         printf(EAN_ERR"\n");
-        return INVALIDO;
+        return NAO_EXISTE;
     }
     /*Testar se o ean corresponde a algum produto*/
     indice_prod = procuraProduto(sys, ean);
@@ -931,20 +927,20 @@ static int testeRemoveProduto(Sys *sys, char ean[], int quant){
     /*Imprimir mensagem de erro caso o ean não corresponda a um produto*/
     if (indice_prod == NAO_EXISTE){
         printf("%s"NO_PROD_ERR"\n", ean);
-        return INVALIDO;
+        return NAO_EXISTE;
     }
     /*Testar se o produto está no cesto*/
     for (int i = 0; i < sys->num_cesto; i++){
         if (strcmp(sys->cesto[i].ean, ean) == 0){
             printf(PROD_IN_USE_ERR"\n");
-            return INVALIDO;
+            return NAO_EXISTE;
         }
     }
 
     /*Testar se a quantidade é válida */
     if (quant <= 0 || quant > sys->tabela_produtos[indice_prod].quantidade){
         printf(QUANT_ERR"\n");
-        return INVALIDO;
+        return NAO_EXISTE;
     }
     return indice_prod;
 }
@@ -961,7 +957,7 @@ void removeProduto(Sys *sys, char ean[], int quant){
 
     indice_prod = testeRemoveProduto(sys, ean, quant);
 
-    if (indice_prod == INVALIDO)
+    if (indice_prod == NAO_EXISTE)
         return;
     
     /*Retirar a quantidade indicada*/

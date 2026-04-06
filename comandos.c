@@ -220,7 +220,7 @@ void fatura(Sys *sys, char linha[]){
     }
     /*Chamar a função auxiliar para extrair o nome*/
     extraiNome(linha, i, nome);
-
+    /*Caso o nome seja omitido e o nif seja default assumir o nome: Cliente final*/
     if (strlen(nome) == 0 && strcmp(nif_str, "999999999") == 0)
         strcpy(nome, "Cliente final");
     
@@ -233,7 +233,6 @@ void fatura(Sys *sys, char linha[]){
     /*Caso o nome seja "error"*/
     if (strcmp(nome, "error") == 0)
         apagaCesto(sys);
-
     /*Calcular os valores totais*/
     for (i = 0; i < sys->num_cesto; i++){
         if (sys->cesto[i].quantidade > 0){
