@@ -28,7 +28,6 @@
 int main(int num_palavras, char *lista_palavras[]){
     Sys sys; /*Inicializar sys*/
     char input[STR_MAX]; /*Criar array para recolher o input*/
-    
     /*Inicializar o Sistema*/
     inicializaSistema(&sys);
     /*Obter os valores dos IVAs*/
@@ -36,40 +35,31 @@ int main(int num_palavras, char *lista_palavras[]){
 
     while(fgets(input, STR_MAX, stdin)){
         switch(input[0]){
+            /*Apagar a memória e sair do programa*/
             case 'q':
-                /*Apagar a memória e sair do programa*/
-                limpaMemoria(&sys); 
-                return 0;
+                limpaMemoria(&sys); return 0;
             case 'p':
                 /*Adicionar produto ao array*/ 
-                addProduto(&sys, input);
-                break;
+                addProduto(&sys, input); break;
             case 'l':
                 /*Listar todos os produtos do array*/
-                listaProduto(&sys, input); 
-                break;
+                listaProduto(&sys, input); break;
             case 'a': 
                 /*Adicionar produto ao cesto*/
-                addCesto(&sys, input);
-                break;
+                addCesto(&sys, input); break;
             case 'r':
                 /*Resumir as faturas*/ 
-                resumoFat(&sys ,input);
-                break;
+                resumoFat(&sys ,input); break;
             case 'f':
                 /*Faturar os produtos no cesto*/
-                fatura(&sys, input); 
-                break;
+                fatura(&sys, input); break;
             case 'c':
                 /*Lista as faturas do cliente*/
-                listaFat(&sys, input); 
-                break;
+                listaFat(&sys, input); break;
             case 'd':
                 /*Apaga produto do array/cesto*/
-                apagaRegisto(&sys, input); 
-                break;
-            default: 
-                break;
+                apagaRegisto(&sys, input); break;
+            default: break;
         }
     }
     return 0;

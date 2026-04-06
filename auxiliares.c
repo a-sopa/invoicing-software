@@ -53,6 +53,19 @@ double arredonda(double preco){
 }
 
 /**
+ * @brief Atribuir os valores default do IVA
+ * @param tabela_iva Array onde os valores vão ser armazenados
+ * @param numero_ivas Contador do numero total de IVAs no array
+ */
+static void iva_default(IVA *tabela_iva, int *numero_ivas){ 
+    tabela_iva[0].c = 'A'; tabela_iva[0].num = 0;
+    tabela_iva[1].c = 'B'; tabela_iva[1].num = 6;
+    tabela_iva[2].c = 'C'; tabela_iva[2].num = 13;
+    tabela_iva[3].c = 'D'; tabela_iva[3].num = 23;
+    *numero_ivas = 4; 
+}
+
+/**
  * @brief Cria a tabela dos ivas (com base num ficheiro ou default)
  * *A função verifica se o programa recebe um argumento:
  * Caso receba um argumento -> Assume que será um ficheiro. Tenta abri-lo e 
@@ -67,7 +80,6 @@ double arredonda(double preco){
 void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], int *numero_ivas){
     /*Função para carregar os valores dos IVAs*/
     FILE *ficheiro_ivas = NULL; /*Assumir que o ficheiro está vazio*/
-
     if (numero_palavras > 1){
         /*Caso o utilizador tenha inserido algum ficheiro como argumento*/
         ficheiro_ivas = fopen(lista_palavras[1], "r"); /*Abrir o ficheiro*/
@@ -84,7 +96,6 @@ void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], i
             (*numero_ivas)++;
             }
         fclose(ficheiro_ivas); /*Fechar o ficheiro*/
-        
         /*Ordenar os IVAS por ordem alfabética
                 ***Insertion Sort***      */
         int i, j;
@@ -103,12 +114,7 @@ void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], i
         return;
     }
     else{
-        /*Caso não tenha sido inserido nenhum ficheiro*/
-        tabela_iva[0].c = 'A'; tabela_iva[0].num = 0;
-        tabela_iva[1].c = 'B'; tabela_iva[1].num = 6;
-        tabela_iva[2].c = 'C'; tabela_iva[2].num = 13;
-        tabela_iva[3].c = 'D'; tabela_iva[3].num = 23;
-        *numero_ivas = 4; 
+        iva_default(tabela_iva, numero_ivas);
     }
 }
 
@@ -297,6 +303,15 @@ void atualizaProduto(Sys *sys, int indice_prod, char ean[], char iva, double pre
     return;
 }
 
+/**
+ * @brief Insere um produto novo na tabela.
+ * @param sys Ponteiro para a estrutura principal do Sistema
+ * @param ean String de caracteres identificadora do produto
+ * @param iva Char correspondente à taxa de IVA
+ * @param preco Valor do preco por unidade
+ * @param quantidade Inteiro correspondente à quantidade de produto a adicionar
+ * @param descricao String que contém uma breve descrição do produto
+ */
 void insereProduto(Sys *sys, char ean[], char iva, double preco, int quantidade, char descricao[]){
     int i, j, indice_ord;
 
