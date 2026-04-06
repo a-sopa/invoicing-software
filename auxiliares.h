@@ -17,6 +17,8 @@ double precoIVA(Sys *sys, int indice, int quant);
 void extraiNome(char linha[], int indice_i, char nome_final[]);
 int testanif(char nif[]);
 int pesquisaFat(Sys *sys, int id_input);
+void removeFatura(Sys *sys, int id_fatura);
+void removeProduto(Sys *sys, char ean[], int quant);
 void limpaMemoria(Sys *sys);
 
 #endif

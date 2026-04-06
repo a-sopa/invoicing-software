@@ -614,102 +614,18 @@ void listaFat(Sys *sys, char linha[]){
  * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void apagaRegisto(Sys *sys, char linha[]){
     /*Apaga o registo de um produto ou fatura (key = d)*/
-    int input, quant, id_fatura, arg2, indice_fat, i, indice_prod, indice_rem = 0;
+    int input, quant, id_fatura, arg2;
     char comando, arg1[STR_MAX], ean[STR_MAX];
     input = sscanf(linha, " %c %s %d", &comando, arg1, &arg2);
 
     if (input == 2){
-        /*Apenas remover nos itens comprados*/
+        /*Remover item das faturas*/
         id_fatura = atoi(arg1);
-        indice_fat = pesquisaFat(sys, id_fatura);
-
-        if (indice_fat == NAO_EXISTE){
-            printf("%d"NO_INVOICE"\n", id_fatura);
-            return;
-        }
-        /*Apresentar os dados da fatura removida*/
-        printf("%.2f %d %s\n", 
-            sys->lista_faturas[indice_fat].valor_total,
-            sys->lista_faturas[indice_fat].nif,
-            sys->lista_faturas[indice_fat].nome_cliente);
-        
-        sys->total_itens_vend -= sys->lista_faturas[indice_fat].total_itens;
-        sys->total_faturado -= sys->lista_faturas[indice_fat].valor_total;
-        free(sys->lista_faturas[indice_fat].nome_cliente);
-        
-        /*Remover a fatura do array*/
-        for (i = indice_fat; i < sys->num_faturas - 1; i++){
-            sys->lista_faturas[i] = sys->lista_faturas[i+1];
-        }
-
-        sys->num_faturas--; /*Diminuir o número de faturas existentes*/
+        removeFatura(sys, id_fatura);
     }
     else if (input == 3){
-        /*Atribuir os valores dos argumentos às variáveis*/
         strcpy(ean, arg1);
         quant = arg2;
-
-        /*Testar a validade do EAN*/
-        if (testaEAN(ean) == INVALIDO){
-            printf(EAN_ERR"\n");
-            return;
-        }
-        /*Testar se o ean corresponde a algum produto*/
-        indice_prod = procuraProduto(sys, ean);
-
-        /*Imprimir mensagem de erro caso o ean não corresponda a um produto*/
-        if (indice_prod == NAO_EXISTE){
-            printf("%s"NO_PROD_ERR"\n", ean);
-            return;
-        }
-        /*Testar se o produto está no cesto*/
-        for (int i = 0; i < sys->num_cesto; i++){
-            if (strcmp(sys->cesto[i].ean, ean) == 0){
-                printf(PROD_IN_USE_ERR"\n");
-                return;
-            }
-        }
-
-        /*Testar se a quantidade é válida */
-        if (quant <= 0 || quant > sys->tabela_produtos[indice_prod].quantidade){
-            printf(QUANT_ERR"\n");
-            return;
-        }
-        
-        /*Retirar a quantidade indicada*/
-        sys->tabela_produtos[indice_prod].quantidade -= quant;
-
-        /*Imprimir os dados atualizados*/
-        printf("%d %s\n", 
-                sys->tabela_produtos[indice_prod].quantidade,
-                sys->tabela_produtos[indice_prod].descricao);
-        
-        /*Caso o stock seja zero*/
-        if (sys->tabela_produtos[indice_prod].quantidade == 0){
-            /*Remover o produto da tabela_produtos*/
-            for (i = indice_prod; i < sys->num_produtos - 1; i++){
-                sys->tabela_produtos[i] = sys->tabela_produtos[i+1];
-            }
-            /*Encontrar o indice no array ordenado*/
-            for (i = 0; i < sys->num_produtos; i++){
-                if (sys->produtos_por_ean[i] == indice_prod){
-                    indice_rem = i;
-                    break;
-                }
-            }
-            /*Remover o item e passar todos os maiores 1 indice para a esquerda*/
-            for (i = indice_rem; i < sys->num_produtos - 1; i++){
-                sys->produtos_por_ean[i] = sys->produtos_por_ean[i+1];
-            }
-
-            /*Atualizar os indices: Os indices maiores do que o removido têm de subtrair 1*/
-            for (i = 0; i < sys->num_produtos - 1; i++){
-                if (sys->produtos_por_ean[i] > indice_prod){
-                    sys->produtos_por_ean[i]--;
-                }
-            }
-
-            sys->num_produtos--; /*Reduzir o número total de produtos*/
-        }
+        removeProduto(sys, ean, quant);
     }
 }
