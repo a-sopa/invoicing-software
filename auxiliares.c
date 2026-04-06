@@ -87,8 +87,8 @@ void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], i
     /*Verificar se o programa não está vazio*/
     if (ficheiro_ivas != NULL){
         char letra;
-        int valor;
-        
+        int valor, i, j;
+        IVA temp;
         /*fscanf retorna o número de argumentos lidos*/
         while (fscanf(ficheiro_ivas, " %c %d", &letra, &valor) == 2){
             tabela_iva[*numero_ivas].c = letra;
@@ -98,9 +98,6 @@ void carregaIVA(int numero_palavras, char *lista_palavras[], IVA tabela_iva[], i
         fclose(ficheiro_ivas); /*Fechar o ficheiro*/
         /*Ordenar os IVAS por ordem alfabética
                 ***Insertion Sort***      */
-        int i, j;
-        IVA temp;
-        
         for (i = 1; i < *numero_ivas; i++){
             temp = tabela_iva[i];
             j = i - 1;
@@ -639,6 +636,66 @@ int testanif(char nif[]){
         return INVALIDO;
     }
     return VALIDO;
+}
+
+int testaInputFatura(char nif_str[], char nome[]){
+    if (testanif(nif_str) == INVALIDO){
+        printf("%s"NO_NIF_ERR"\n", nif_str);
+        return INVALIDO;
+    }
+
+    /*O primeiro elemento do nome de cliente tem de ser uma letra*/
+    if (!isalpha(nome[0])){
+        printf(NAME_ERR"\n");
+        return INVALIDO;
+    }
+    return VALIDO;
+}
+
+void apagaCesto(Sys *sys){
+    int i;
+    for (i = 0; i < sys->num_cesto; i++){
+            /*Procurar o indice do produto na tabela*/
+            int id_prod = procuraProduto(sys, sys->cesto[i].ean);
+            if (id_prod != NAO_EXISTE){
+                sys->tabela_produtos[id_prod].vendido -= sys->cesto[i].quantidade; /*Remover as vendas*/
+                sys->tabela_produtos[id_prod].quantidade += sys->cesto[i].quantidade; /*Repor o stock*/
+            }
+        }
+        /*Reiniciar o contador de itens no cesto*/
+        sys->num_cesto = 0;
+        return;
+}
+
+void emiteFatura(Sys *sys, int nif_num, char nome[], int total_itens, double valor_fatura){
+    /*Reservar memória*/
+    if (sys->num_faturas >= sys->capacidade_faturas){
+        if (sys->capacidade_faturas == 0){
+            sys->capacidade_faturas += 2;
+        }
+        /*Realocar novo espaço de memória*/
+        (sys->capacidade_faturas) *= 2; /*Atualizar a capacidade*/
+        sys->lista_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
+    }
+    /*Guardar Fatura*/
+    sys->lista_faturas[sys->num_faturas].nif = nif_num; /*Guardar NIF*/
+    /*Reservar espaço de memória para o nome cliente*/
+    sys->lista_faturas[sys->num_faturas].nome_cliente = malloc(strlen(nome) + 1); 
+    strcpy(sys->lista_faturas[sys->num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
+
+    sys->lista_faturas[sys->num_faturas].total_itens = total_itens; /*Guardar o numero total de itens na fatura*/
+    sys->lista_faturas[sys->num_faturas].valor_total = valor_fatura; /*Guardar o valor monetário da fatura*/
+    sys->lista_faturas[sys->num_faturas].id_fatura = sys->num_faturas_emit + 1; /*Atualizar o id da fatura*/
+
+    sys->total_itens_vend += total_itens; /*Atualizar o total de itens em faturas*/
+    sys->total_faturado += valor_fatura; /*Atualizar o valor total monetário em faturas*/
+
+    /*Emitir Fatura*/
+    printf("%d %.2f %d\n", total_itens, valor_fatura, (sys->num_faturas) + 1);
+    /*Aumentar o número de faturas existentes e emitidas*/
+    sys->num_faturas++;
+    sys->num_faturas_emit++;
+    sys->num_cesto = 0; /*Esvaziar o cesto*/
 }
 
 /**

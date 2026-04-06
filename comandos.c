@@ -251,10 +251,8 @@ void fatura(Sys *sys, char linha[]){
     char nif_str[STR_MAX] = "999999999"; 
     char nome[STR_MAX], arg1[STR_MAX], arg2[STR_MAX];
     int i = 1; /* Começa no indíce 1 para ignorar o f*/
-    int j, total_itens_fatura = 0, nif_num, num_args;
+    int total_itens_fatura = 0, nif_num, num_args;
     double valor_fatura = 0.0;
-
-    /*Encontrar os inputs corretos*/
 
     while (isspace(linha[i])){
         i++; /*Incrementar o i até encontrar algo que não seja espaço*/
@@ -274,37 +272,19 @@ void fatura(Sys *sys, char linha[]){
     /*Chamar a função auxiliar para extrair o nome*/
     extraiNome(linha, i, nome);
 
-    if (strlen(nome) == 0 && strcmp(nif_str, "999999999") == 0){
+    if (strlen(nome) == 0 && strcmp(nif_str, "999999999") == 0)
         strcpy(nome, "Cliente final");
-    }
-
-    /*TESTES*/
-    if (testanif(nif_str) == INVALIDO){
-        printf("%s"NO_NIF_ERR"\n", nif_str);
+    
+    /*Testar a validade do nif e do nome*/
+    if (testaInputFatura(nif_str, nome) == INVALIDO)
         return;
-    }
+
     /*"Converter" o NIF para inteiro*/
     nif_num = atoi(nif_str);
 
-    /*O primeiro elemento do nome de cliente tem de ser uma letra*/
-    if (!isalpha(nome[0])){
-        printf(NAME_ERR"\n");
-        return;
-    }
-
     /*Caso o nome seja "error"*/
     if (strcmp(nome, "error") == 0){
-        for (j = 0; j < sys->num_cesto; j++){
-            /*Procurar o indice do produto na tabela*/
-            int id_prod = procuraProduto(sys, sys->cesto[j].ean);
-            if (id_prod != NAO_EXISTE){
-                sys->tabela_produtos[id_prod].vendido -= sys->cesto[j].quantidade; /*Remover as vendas*/
-                sys->tabela_produtos[id_prod].quantidade += sys->cesto[j].quantidade; /*Repor o stock*/
-            }
-        }
-        /*Reiniciar o contador de itens no cesto*/
-        sys->num_cesto = 0;
-        return;
+        apagaCesto(sys);
     }
 
     /*Calcular os valores totais*/
@@ -314,40 +294,7 @@ void fatura(Sys *sys, char linha[]){
             valor_fatura += sys->cesto[i].preco;
         }
     }
-
-    /*Reservar memória*/
-    if (sys->num_faturas >= sys->capacidade_faturas){
-        if (sys->capacidade_faturas == 0){
-            sys->capacidade_faturas += 2;
-        }
-        /*Realocar novo espaço de memória*/
-        (sys->capacidade_faturas) *= 2; /*Atualizar a capacidade*/
-        sys->lista_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
-    }
-
-    /*Guardar Fatura*/
-    sys->lista_faturas[sys->num_faturas].nif = nif_num; /*Guardar NIF*/
-
-    /*Reservar espaço de memória para o nome cliente*/
-    sys->lista_faturas[sys->num_faturas].nome_cliente = malloc(strlen(nome) + 1); 
-    strcpy(sys->lista_faturas[sys->num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
-
-    sys->lista_faturas[sys->num_faturas].total_itens = total_itens_fatura; /*Guardar o numero total de itens na fatura*/
-    sys->lista_faturas[sys->num_faturas].valor_total = valor_fatura; /*Guardar o valor monetário da fatura*/
-    sys->lista_faturas[sys->num_faturas].id_fatura = sys->num_faturas_emit + 1; /*Atualizar o id da fatura*/
-
-    /*Atualizar variáveis globais*/
-    sys->total_itens_vend += total_itens_fatura; /*Atualizar o total de itens em faturas*/
-    sys->total_faturado += valor_fatura; /*Atualizar o valor total monetário em faturas*/
-
-    /*Emitir Fatura*/
-    printf("%d %.2f %d\n", total_itens_fatura, valor_fatura, (sys->num_faturas) + 1);
-
-    /*Aumentar o número de faturas existentes e emitidas*/
-    sys->num_faturas++;
-    sys->num_faturas_emit++;
-    sys->num_cesto = 0; /*Esvaziar o cesto*/
-    return;
+    emiteFatura(sys, nif_num, nome, total_itens_fatura, valor_fatura);
 }
 
 /**
