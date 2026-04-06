@@ -576,16 +576,20 @@ void atualizaCesto(Sys *sys, int indice_tabela, int indice_cesto, int quant){
 void insereCesto(Sys *sys, int indice_tabela, char ean[], int quant){
     int i, indice_ord = sys->num_cesto;
     double preco_com_iva;
-
+    Cesto *temp_cesto;
     /*Caso a capacidade do array não seja suficiente para o número de valores no cesto*/
     if (sys->capacidade_cesto <= sys->num_cesto){
         if (sys->capacidade_cesto == 0)
             sys->capacidade_cesto = 2;
         /*Aumentar o tamanho do array "*cesto" para o dobro dos espaços*/
         sys->capacidade_cesto *= 2; /*Aumentar a capacidade*/
-        sys->cesto = realloc(sys->cesto, sys->capacidade_cesto * sizeof(Cesto)); /*Alocar memória*/
+        temp_cesto = realloc(sys->cesto, sys->capacidade_cesto * sizeof(Cesto)); /*Alocar memória*/
+        if (temp_cesto == NULL){
+            printf(NO_MEMORY"\n");
+            return;
+        }
+        sys->cesto = temp_cesto;
     }
-
     /*Descobrir o indice de inserção para manter o cesto ordenado*/
     for(i = 0; i < indice_ord; i++){
         if (strcmp(sys->cesto[i].ean, ean) > 0){
@@ -605,7 +609,6 @@ void insereCesto(Sys *sys, int indice_tabela, char ean[], int quant){
 
     preco_com_iva = precoIVA(sys, indice_tabela, quant);
     sys->cesto[indice_ord].preco = preco_com_iva;
-
     /*Apresentar as informações*/
     listaCesto(sys, indice_tabela, quant, preco_com_iva);
 }
@@ -659,6 +662,71 @@ void extraiNome(char linha[], int indice_i, char nome_final[]){
         if (len > 0 && nome_final[len-1] == '\n')
             nome_final[len-1] = '\0';
     }
+}
+
+void listaFatNome(Sys *sys, char nome[]){
+    int i, validacao = NAO_EXISTE;
+    
+    if (!isalpha(nome[0])){
+        printf(NAME_ERR"\n");
+        return;
+    }
+    /*Procurar o cliente na lista de faturação*/
+    for (i = 0; i < sys->num_faturas; i++){
+        if (strcmp(sys->lista_faturas[i].nome_cliente, nome) == 0){
+            printf("%d %.2f %s\n", 
+                    sys->lista_faturas[i].id_fatura,
+                    sys->lista_faturas[i].valor_total,
+                    sys->lista_faturas[i].nome_cliente);
+            validacao = EXISTE;
+        }
+    }
+    /*Verificar se o cliente existe*/
+    if (validacao == NAO_EXISTE){
+        printf("%s"NO_CL_ERR"\n", nome);
+        return;
+    }
+}
+
+void listaTodasFat(Sys *sys){
+    Fatura *copia, temp;
+    int i, j;
+    /*Listar todas as faturas por ordem:
+        1.ª Alfabeticamente
+        2.ª Cronologicamente*/
+        if (sys->num_faturas == 0){
+            return;
+        }
+        copia = malloc(sys->num_faturas * sizeof(Fatura));
+        if (copia == NULL){
+            printf(NO_MEMORY"\n");
+            return;
+        }
+
+        /*Copiar as faturas*/
+        for (i = 0; i < sys->num_faturas; i++){
+            copia[i] = sys->lista_faturas[i];
+        }
+
+        /*Insertion Sort por ordem alfabética*/
+        for (i = 1; i < sys->num_faturas; i++){
+            j = i - 1;
+            temp = copia[i];
+            while (j >= 0 && strcmp(copia[j].nome_cliente, temp.nome_cliente) > 0){
+                copia[j+1] = copia[j];
+                j--;
+            }
+            copia[j+1] = temp;
+        }
+        /*Apresentar as faturas*/
+        for (i = 0; i < sys->num_faturas; i++){
+            printf("%d %.2f %s\n", 
+                copia[i].id_fatura,
+                copia[i].valor_total,
+                copia[i].nome_cliente);
+        }
+        
+        free(copia);
 }
 
 /**
@@ -733,6 +801,8 @@ void apagaCesto(Sys *sys){
  * @param valor_fatura Valor monetário da fatura (com IVA)
  */
 void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_fatura){
+    Fatura *temp_faturas;
+    char *temp_nome;
     /*Reservar memória*/
     if (sys->num_faturas >= sys->capacidade_faturas){
         if (sys->capacidade_faturas == 0){
@@ -740,12 +810,22 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
         }
         /*Realocar novo espaço de memória*/
         (sys->capacidade_faturas) *= 2; /*Atualizar a capacidade*/
-        sys->lista_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
+        temp_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
+        if (temp_faturas == NULL){
+            printf(NO_MEMORY"\n");
+            return;
+        }
+        sys->lista_faturas = temp_faturas;
     }
     /*Guardar Fatura*/
     sys->lista_faturas[sys->num_faturas].nif = nif; /*Guardar NIF*/
     /*Reservar espaço de memória para o nome cliente*/
-    sys->lista_faturas[sys->num_faturas].nome_cliente = malloc(strlen(nome) + 1); 
+    temp_nome = malloc(strlen(nome) + 1);
+    if (temp_nome == NULL){
+        printf(NO_MEMORY"\n");
+        return;
+    }
+    sys->lista_faturas[sys->num_faturas].nome_cliente = temp_nome;
     strcpy(sys->lista_faturas[sys->num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
 
     sys->lista_faturas[sys->num_faturas].total_itens = total_itens; /*Guardar o numero total de itens na fatura*/

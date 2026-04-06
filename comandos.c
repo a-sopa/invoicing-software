@@ -271,8 +271,7 @@ void fatura(Sys *sys, char linha[]){
 void listaFat(Sys *sys, char linha[]){
     /*Lista as faturas do sistema (key = c)*/
     char nome[STR_MAX];
-    int i, j, argumento = NAO_EXISTE, validacao = NAO_EXISTE;
-    Fatura *copia, temp;
+    int argumento = NAO_EXISTE;
 
     /*Utilizar a função auxiliar para extrair o nome*/
     extraiNome(linha, 1, nome);
@@ -284,60 +283,10 @@ void listaFat(Sys *sys, char linha[]){
 
     /*Caso o utilizador tenha inserido o nome como argumento*/
     if (argumento == EXISTE){
-        /*TESTES*/
-        if (!isalpha(nome[0])){
-        printf(NAME_ERR"\n");
-        return;
-        }
-        /*Procurar o cliente na lista de faturação*/
-        for (i = 0; i < sys->num_faturas; i++){
-            if (strcmp(sys->lista_faturas[i].nome_cliente, nome) == 0){
-                printf("%d %.2f %s\n", 
-                        sys->lista_faturas[i].id_fatura,
-                        sys->lista_faturas[i].valor_total,
-                        sys->lista_faturas[i].nome_cliente);
-                validacao = EXISTE;
-            }
-        }
-        /*Verificar se o cliente existe*/
-        if (validacao == NAO_EXISTE){
-            printf("%s"NO_CL_ERR"\n", nome);
-            return;
-        }
+        listaFatNome(sys, nome);
     }
     else{
-    /*Listar todas as faturas por ordem:
-        1.ª Alfabeticamente
-        2.ª Cronologicamente*/
-        if (sys->num_faturas == 0){
-            return;
-        }
-        copia = malloc(sys->num_faturas * sizeof(Fatura));
-
-        /*Copiar as faturas*/
-        for (i = 0; i < sys->num_faturas; i++){
-            copia[i] = sys->lista_faturas[i];
-        }
-
-        /*Insertion Sort por ordem alfabética*/
-        for (i = 1; i < sys->num_faturas; i++){
-            j = i - 1;
-            temp = copia[i];
-            while (j >= 0 && strcmp(copia[j].nome_cliente, temp.nome_cliente) > 0){
-                copia[j+1] = copia[j];
-                j--;
-            }
-            copia[j+1] = temp;
-        }
-        /*Apresentar as faturas*/
-        for (i = 0; i < sys->num_faturas; i++){
-            printf("%d %.2f %s\n", 
-                copia[i].id_fatura,
-                copia[i].valor_total,
-                copia[i].nome_cliente);
-        }
-        
-        free(copia);
+        listaTodasFat(sys);
     }
     return;    
 }

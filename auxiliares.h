@@ -24,6 +24,8 @@ double precoIVA(Sys *sys, int indice, int quant);
 void atualizaCesto(Sys *sys, int indice_tabela, int indice_cesto, int quant);
 void insereCesto(Sys *sys, int indice_tabela, char ean[], int quant);
 void extraiNome(char linha[], int indice_i, char nome_final[]);
+void listaFatNome(Sys *sys, char nome[]);
+void listaTodasFat(Sys *sys);
 int testanif(char nif[]);
 int testaInputFatura(char nif_str[], char nome[]);
 void apagaCesto(Sys *sys);

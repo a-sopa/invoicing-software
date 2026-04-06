@@ -36,5 +36,6 @@
 #define NAME_ERR "invalid name" /**< Erro: nome inválido*/
 #define NO_CL_ERR ": no such client" /**< Erro: Cliente inexistente*/
 #define NO_INVOICE ": no such invoice" /**< Erro: Não existe uma fatura com o id indicado*/
+#define NO_MEMORY "no memory" /**< Erro: Não foi possível alocar mais memória*/
 
 #endif
