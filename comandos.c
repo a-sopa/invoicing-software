@@ -223,7 +223,6 @@ void fatura(Sys *sys, char linha[]){
     /*Caso o nome seja omitido e o nif seja default assumir o nome: Cliente final*/
     if (strlen(nome) == 0 && strcmp(nif_str, "999999999") == 0)
         strcpy(nome, "Cliente final");
-    
     /*Testar a validade do nif e do nome*/
     if (testaInputFatura(nif_str, nome) == INVALIDO)
         return;

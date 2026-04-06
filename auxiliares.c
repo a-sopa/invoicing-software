@@ -835,7 +835,6 @@ void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_f
     sys->lista_faturas[sys->num_faturas].id_fatura = sys->num_faturas_emit + 1; /*Atualizar o id da fatura*/
     sys->total_itens_vend += total_itens; /*Atualizar o total de itens em faturas*/
     sys->total_faturado += valor_fatura; /*Atualizar o valor total monetário em faturas*/
-
     /*Emitir Fatura*/
     printf("%d %.2f %d\n", total_itens, valor_fatura, (sys->num_faturas) + 1);
     /*Aumentar o número de faturas existentes e emitidas*/
