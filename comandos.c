@@ -23,10 +23,6 @@
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos 
  * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void addProduto(Sys *sys, char linha[]){ 
-    /*Introduz um novo produto no sistema (key = p)
-      p <ean> <iva> <preco> <quantidade> <descricao>  */
-
-    /*Inicializar variáveis*/
     char comando, ean[STR_MAX], iva, descricao[STR_MAX];
     double preco;
     int quantidade, indice_prod;
@@ -59,7 +55,6 @@ void addProduto(Sys *sys, char linha[]){
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos 
  * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void listaProduto(Sys *sys, char linha[]){
-    /*Imprime a info de todos os produtos (key = l)*/
     char *token, delimitadores[] = " \n\t";
 
     /*Primeiro corte na string (caracter l)*/
@@ -90,14 +85,12 @@ void listaProduto(Sys *sys, char linha[]){
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos e o cesto
  * @param linha String com a linha de input completa introduzida pelo utilizador*/ 
 void addCesto(Sys *sys, char linha[]){
-    /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
-    int quant = 0, input = 0, indice_tabela = 0, i;
-    int indice_cesto = NAO_EXISTE;
+    int quant = 0, input = 0, indice_tabela = 0, i, indice_cesto = NAO_EXISTE;
     char comando, ean[STR_MAX], arg1[STR_MAX], arg2[STR_MAX]; 
     double preco_com_iva;
     
     input = sscanf(linha, " %c %s %s", &comando, arg1, arg2);
-
+    /*Caso apenas tenha sido inserido o 'a'*/
     if (input == 1){
         for (i = 0; i < sys->num_cesto; i++){
             /*Obter o indice do produto*/
@@ -121,11 +114,9 @@ void addCesto(Sys *sys, char linha[]){
         quant = atoi(arg1); /*Converter o arg1 para inteiro*/
         strcpy(ean, arg2); /*Copiar o arg2 para o ean*/
     }
-
     if (validaCesto(sys, ean, quant, &indice_tabela, &indice_cesto) == INVALIDO){
         return;
     };
-    
     /*-------------------------------------------*/
     /*Atualizar stock na tabela_produtos (remover quant) e a quantidade vendida*/
     sys->tabela_produtos[indice_tabela].quantidade -= quant;
@@ -153,7 +144,6 @@ void addCesto(Sys *sys, char linha[]){
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos
  * @param linha String com a linha de input completa introduzida pelo utilizador*/ 
 void resumoFat(Sys *sys, char linha[]){
-    /*Resumo da Faturação (key = r)*/
     char comando, ean[STR_MAX];
     int input = 0, indice, i = 0;
     input = sscanf(linha, "%c %s", &comando, ean);
@@ -172,8 +162,7 @@ void resumoFat(Sys *sys, char linha[]){
                 sys->tabela_iva[i].num);
         }
         return;
-    } 
-
+    }
     /*Caso o utilizador introduza argumentos*/
     else{
         /*TESTES*/
@@ -183,7 +172,6 @@ void resumoFat(Sys *sys, char linha[]){
         }
         /*Obter o indice do produto*/
         indice = procuraProduto(sys, ean);
-
         /*Verificar se o produto existe*/
         if (indice == NAO_EXISTE){
             printf("%s"NO_PROD_ERR"\n", ean);
@@ -210,7 +198,6 @@ void resumoFat(Sys *sys, char linha[]){
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém a tabela_produtos e o cesto
  * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void fatura(Sys *sys, char linha[]){
-    /*Fatura os produtos no cesto (key = f)*/
     char nif_str[STR_MAX] = "999999999"; 
     char nome[STR_MAX], arg1[STR_MAX], arg2[STR_MAX];
     int i = 1; /* Começa no indíce 1 para ignorar o f*/
@@ -268,7 +255,6 @@ void fatura(Sys *sys, char linha[]){
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém a lista_faturas e variáveis globais
  * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void listaFat(Sys *sys, char linha[]){
-    /*Lista as faturas do sistema (key = c)*/
     char nome[STR_MAX];
     int argumento = NAO_EXISTE;
 
@@ -301,7 +287,6 @@ void listaFat(Sys *sys, char linha[]){
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém as listas de faturas e produtos
  * @param linha String com a linha de input completa introduzida pelo utilizador*/
 void apagaRegisto(Sys *sys, char linha[]){
-    /*Apaga o registo de um produto ou fatura (key = d)*/
     int input, quant, id_fatura, arg2;
     char comando, arg1[STR_MAX], ean[STR_MAX];
     input = sscanf(linha, " %c %s %d", &comando, arg1, &arg2);

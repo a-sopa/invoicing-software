@@ -605,7 +605,7 @@ void insereCesto(Sys *sys, int indice_tabela, char ean[], int quant){
     strcpy(sys->cesto[indice_ord].ean, ean);
     sys->cesto[indice_ord].quantidade = quant;
     sys->num_cesto++;
-
+    /*Obter o preço com IVA*/
     preco_com_iva = precoIVA(sys, indice_tabela, quant);
     sys->cesto[indice_ord].preco = preco_com_iva;
     /*Apresentar as informações*/
@@ -708,14 +708,12 @@ void listaTodasFat(Sys *sys){
         copia = malloc(sys->num_faturas * sizeof(Fatura));
         if (copia == NULL){
             printf(NO_MEMORY"\n");
-            exit(0);;
+            exit(0);
         }
-
         /*Copiar as faturas*/
         for (i = 0; i < sys->num_faturas; i++){
             copia[i] = sys->lista_faturas[i];
         }
-
         /*Insertion Sort por ordem alfabética*/
         for (i = 1; i < sys->num_faturas; i++){
             j = i - 1;
@@ -914,6 +912,44 @@ void removeFatura(Sys *sys, int id_fatura){
 }
 
 /**
+ * @brief Valida as condições para a remoção de um produto.
+ * @param sys Ponteiro para a estrutura principal do Sistema, que contém os produtos e o cesto
+ * @param ean String com o código EAN do produto a validar
+ * @param quant Inteiro correspondente à quantidade de produto a ser testada
+ * @return Retorna o índice do produto na tabela caso todas as validações passem, ou INVALIDO em caso de erro
+ */
+static int testeRemoveProduto(Sys *sys, char ean[], int quant){
+    int indice_prod;
+    /*Testar a validade do EAN*/
+    if (testaEAN(ean) == INVALIDO){
+        printf(EAN_ERR"\n");
+        return INVALIDO;
+    }
+    /*Testar se o ean corresponde a algum produto*/
+    indice_prod = procuraProduto(sys, ean);
+
+    /*Imprimir mensagem de erro caso o ean não corresponda a um produto*/
+    if (indice_prod == NAO_EXISTE){
+        printf("%s"NO_PROD_ERR"\n", ean);
+        return INVALIDO;
+    }
+    /*Testar se o produto está no cesto*/
+    for (int i = 0; i < sys->num_cesto; i++){
+        if (strcmp(sys->cesto[i].ean, ean) == 0){
+            printf(PROD_IN_USE_ERR"\n");
+            return INVALIDO;
+        }
+    }
+
+    /*Testar se a quantidade é válida */
+    if (quant <= 0 || quant > sys->tabela_produtos[indice_prod].quantidade){
+        printf(QUANT_ERR"\n");
+        return INVALIDO;
+    }
+    return indice_prod;
+}
+
+/**
  * @brief Remove uma quantidade de produto com um certo ean do array
  * @param sys Ponteiro para a estrutura principal do Sistema, que contém os produtos
  * @param ean String que contém o ean a encontrar
@@ -923,32 +959,10 @@ void removeProduto(Sys *sys, char ean[], int quant){
     /*Atribuir os valores dos argumentos às variáveis*/
     int indice_prod, i, indice_rem = 0;
 
-    /*Testar a validade do EAN*/
-    if (testaEAN(ean) == INVALIDO){
-        printf(EAN_ERR"\n");
-        return;
-    }
-    /*Testar se o ean corresponde a algum produto*/
-    indice_prod = procuraProduto(sys, ean);
+    indice_prod = testeRemoveProduto(sys, ean, quant);
 
-    /*Imprimir mensagem de erro caso o ean não corresponda a um produto*/
-    if (indice_prod == NAO_EXISTE){
-        printf("%s"NO_PROD_ERR"\n", ean);
+    if (indice_prod == INVALIDO)
         return;
-    }
-    /*Testar se o produto está no cesto*/
-    for (int i = 0; i < sys->num_cesto; i++){
-        if (strcmp(sys->cesto[i].ean, ean) == 0){
-            printf(PROD_IN_USE_ERR"\n");
-            return;
-        }
-    }
-
-    /*Testar se a quantidade é válida */
-    if (quant <= 0 || quant > sys->tabela_produtos[indice_prod].quantidade){
-        printf(QUANT_ERR"\n");
-        return;
-    }
     
     /*Retirar a quantidade indicada*/
     sys->tabela_produtos[indice_prod].quantidade -= quant;
@@ -975,14 +989,12 @@ void removeProduto(Sys *sys, char ean[], int quant){
         for (i = indice_rem; i < sys->num_produtos - 1; i++){
             sys->produtos_por_ean[i] = sys->produtos_por_ean[i+1];
         }
-
         /*Atualizar os indices: Os indices maiores do que o removido têm de subtrair 1*/
         for (i = 0; i < sys->num_produtos - 1; i++){
             if (sys->produtos_por_ean[i] > indice_prod){
                 sys->produtos_por_ean[i]--;
             }
         }
-
         sys->num_produtos--; /*Reduzir o número total de produtos*/
     }
 }
