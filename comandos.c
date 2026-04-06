@@ -204,30 +204,22 @@ void listaProduto(Sys *sys, char linha[]){
  * @param linha String com a linha de input completa introduzida pelo utilizador*/ 
 void addCesto(Sys *sys, char linha[]){
     /*Adiciona ao cesto a quantidade de produto indicado (key = a)*/
-    int quant = 0, input = 0, indice_tabela, i;
-    int quant_cesto = 0, indice_cesto = NAO_EXISTE, indice_ord, q_atual_cesto = 0;
+    int quant = 0, input = 0, indice_tabela = 0, i;
+    int indice_cesto = NAO_EXISTE;
     char comando, ean[STR_MAX], arg1[STR_MAX], arg2[STR_MAX]; 
     double preco_com_iva;
     
     input = sscanf(linha, " %c %s %s", &comando, arg1, arg2);
 
     if (input == 1){
-
         for (i = 0; i < sys->num_cesto; i++){
             /*Obter o indice do produto*/
             indice_tabela = procuraProduto(sys, sys->cesto[i].ean);
-
             /*Caso o indice exista calcular o preco com IVA*/
             if (indice_tabela != NAO_EXISTE){
                 preco_com_iva = precoIVA(sys, indice_tabela, sys->cesto[i].quantidade);
-
                 /*Apresentar as informações*/
-                printf("%c %.2Lf %d %.2f %s\n", 
-                sys->tabela_produtos[indice_tabela].iva,
-                sys->tabela_produtos[indice_tabela].preco,
-                sys->cesto[i].quantidade,
-                preco_com_iva,
-                sys->tabela_produtos[indice_tabela].descricao);
+                listaCesto(sys, indice_tabela, sys->cesto[i].quantidade, preco_com_iva);
             }
         }
         return;
@@ -243,107 +235,23 @@ void addCesto(Sys *sys, char linha[]){
         strcpy(ean, arg2); /*Copiar o arg2 para o ean*/
     }
 
-    /*TESTES*/
-    /*Testa se o EAN é válido*/
-    if (testaEAN(ean) == INVALIDO){
-        printf(EAN_ERR"\n");
+    if (validaCesto(sys, ean, quant, &indice_tabela, &indice_cesto) == INVALIDO){
         return;
-    }
+    };
     
-    /*Procura se o EAN existe no cesto*/
-    for (i = 0; i < sys->num_cesto; i++){
-        /*Comparar os EAN's do cesto com o introduzido*/
-        if (strcmp(sys->cesto[i].ean, ean) == 0){
-            /*Obter os valores*/
-            quant_cesto = sys->cesto[i].quantidade; 
-            indice_cesto = i;
-            break;
-        }
-    }
-
-    /*Testa se existem artigos suficientes no cesto para serem removidos*/
-    if (quant < 0 && quant_cesto < quant*(-1)){
-        printf(QUANT_ERR"\n"); 
-        return;
-    }
-
-    /*Obter o indíce do produto no armazém*/
-    indice_tabela = procuraProduto(sys, ean);
-
-    /*Testa se o produto existe na lista_produtos*/
-    if (indice_tabela == NAO_EXISTE){
-        printf("%s"NO_PROD_ERR"\n", ean);
-        return;
-    }
-    /*Testa se o produto existe em stock na lista_produtos*/
-    if (quant > 0 && sys->tabela_produtos[indice_tabela].quantidade < quant){
-        printf(NO_STOCK_ERR"\n");
-        return;
-    }
-
     /*-------------------------------------------*/
-    /*Atualizar stock na tabela_produtos (remover quant)*/
+    /*Atualizar stock na tabela_produtos (remover quant) e a quantidade vendida*/
     sys->tabela_produtos[indice_tabela].quantidade -= quant;
-    /*Atualizar a quantidade vendida*/
     sys->tabela_produtos[indice_tabela].vendido += quant;
 
     /*Caso o item já esteja no cesto*/
     if (indice_cesto != NAO_EXISTE){
-        /*Atualizar a quantidade*/
-        sys->cesto[indice_cesto].quantidade += quant;
-        q_atual_cesto = sys->cesto[indice_cesto].quantidade;
+        atualizaCesto(sys, indice_tabela, indice_cesto, quant); /*Atualizar a quantidade*/
     }
     /*Caso o item não exista no cesto*/
     else if (indice_cesto == NAO_EXISTE){
-        /*Caso a capacidade do array não seja suficiente para o número de valores no cesto*/
-        if (sys->capacidade_cesto <= sys->num_cesto){
-            if (sys->capacidade_cesto == 0)
-                sys->capacidade_cesto = 2;
-            /*Aumentar o tamanho do array "*cesto" para o dobro dos espaços*/
-            sys->capacidade_cesto *= 2; /*Aumentar a capacidade*/
-            sys->cesto = realloc(sys->cesto, sys->capacidade_cesto * sizeof(Cesto)); /*Alocar memória*/
-        }
-
-        indice_ord = sys->num_cesto;
-        /*Descobrir o indice de inserção para manter o cesto ordenado*/
-        for(i = 0; i < indice_ord; i++){
-            if (strcmp(sys->cesto[i].ean, ean) > 0){
-                indice_ord = i;
-                break;
-            }
-        }
-
-        for (i = sys->num_cesto; i > indice_ord; i--){
-            sys->cesto[i] = sys->cesto[i-1];
-        }
-
-        /*Inserir os dados no array cesto*/
-        strcpy(sys->cesto[indice_ord].ean, ean);
-        sys->cesto[indice_ord].quantidade = quant;
-        q_atual_cesto = quant;
-
-        sys->num_cesto++;
+        insereCesto(sys, indice_tabela, ean, quant); /*Inserir no cesto*/
     }
-    
-    preco_com_iva = precoIVA(sys, indice_tabela, q_atual_cesto);
-    
-    if (indice_cesto == NAO_EXISTE){
-        /*Se o item for novo no cesto é necessário guardá-lo no indice correspondente*/
-        sys->cesto[indice_ord].preco = preco_com_iva;
-    }
-    else{
-        /*Se o produto já existia, basta apenas atualizar o valor do indice*/
-        sys->cesto[indice_cesto].preco = preco_com_iva;
-    }
-
-    printf("%c %.2Lf %d %.2lf %s\n", 
-            sys->tabela_produtos[indice_tabela].iva,
-            sys->tabela_produtos[indice_tabela].preco,
-            q_atual_cesto,
-            preco_com_iva,
-            sys->tabela_produtos[indice_tabela].descricao);
-
-    return;
 }
 
 /**
