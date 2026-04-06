@@ -191,10 +191,10 @@ int testaDescricao(char descricao[]){
 }
 
 /**
- * @brief Pesquisa na tabela_produtos
+ * @brief Pesquisa na tabela_produtos.
  * * Esta função utiliza pesquisa binária para procurar o produto.
  * @param sys Ponteiro para a estrutura principal do Sistema
- * @param ean String de caracteres
+ * @param ean String de caracteres identificadora do produto
  * @return indice do produto (-1 caso não exista)
  */
 int procuraProduto(Sys *sys, char ean[]){
@@ -225,6 +225,115 @@ int procuraProduto(Sys *sys, char ean[]){
         }
     }
     return NAO_EXISTE;
+}
+
+/**
+ * @brief Valida os parâmetros de entrada de um produto.
+ * @param sys Ponteiro para a estrutura principal do Sistema
+ * @param ean String de caracteres identificadora do produto
+ * @param iva Char correspondente à taxa de IVA
+ * @param preco Valor do preco por unidade
+ * @param quantidade Inteiro correspondente à quantidade de produto a adicionar
+ * @param descricao String que contém uma breve descrição do produto
+ * @return VALIDO se todos os parâmetros estiverem corretos, INVALIDO caso contrário
+ */
+int validaInputProd(Sys *sys, char ean[], char iva, double preco, int quantidade, char descricao[]){
+    if (testaEAN(ean) == INVALIDO){
+        /*O código EAN é inválido*/
+        printf(EAN_ERR"\n");
+        return INVALIDO;
+    }
+    if (testaIVA(iva, sys->tabela_iva, sys->num_ivas) == INVALIDO){
+        /*O caracter do IVA é inválido*/
+        printf(IVA_ERR"\n");
+        return INVALIDO;
+    }
+    if (preco <= 0){
+        /*O preço é inferior/igual a 0*/
+        printf(PRICE_ERR"\n");
+        return INVALIDO;
+    }
+    if (quantidade < 0){
+        /*A quantidade introduzida é negativa*/
+        printf(QUANT_ERR"\n");
+        return INVALIDO;
+    }
+    if (testaDescricao(descricao) == INVALIDO){
+        /*A descrição ultrapassa o tamanho máximo*/
+        printf(DESC_ERR"\n");
+        return INVALIDO;
+    }
+    return VALIDO;
+}
+
+/**
+ * @brief Atualiza os detalhes do produto, caso ele já exista no sistema
+ * @param sys Ponteiro para a estrutura principal do Sistema
+ * @param indice_prod Indice do produto no array
+ * @param ean String de caracteres identificadora do produto
+ * @param iva Char correspondente à taxa de IVA
+ * @param preco Valor do preco por unidade
+ * @param quantidade Inteiro correspondente à quantidade de produto a adicionar
+ * @param descricao String que contém uma breve descrição do produto
+ */
+void atualizaProduto(Sys *sys, int indice_prod, char ean[], char iva, double preco, int quantidade, char descricao[]){
+    int i = 0;
+    /*Verificar se o preço do cesto é igual ao introduzido*/
+    if (sys->tabela_produtos[indice_prod].preco != preco){
+        for (i = 0; i < sys->num_cesto; i++){
+            if (strcmp((sys->cesto)[i].ean, ean) == 0){
+                printf(PROD_IN_USE_ERR"\n");
+                return;
+            }
+        }
+    }
+    /*Atualizar o stock*/
+    sys->tabela_produtos[indice_prod].preco = preco;
+    sys->tabela_produtos[indice_prod].quantidade += quantidade;
+    sys->tabela_produtos[indice_prod].iva = iva;
+    strcpy(sys->tabela_produtos[indice_prod].descricao, descricao);
+
+    printf("%d\n", sys->tabela_produtos[indice_prod].quantidade);
+    return;
+}
+
+void insereProduto(Sys *sys, char ean[], char iva, double preco, int quantidade, char descricao[]){
+    int i, j, indice_ord;
+
+    /*TESTE*/
+    if (sys->num_produtos >= PROD_MAX){
+        /*A quantidade de produtos excede o máximo*/
+        printf(PROD_ERR"\n");
+        return;
+    }
+
+    /*Adicionar os valores à tabela de produtos*/
+    sys->tabela_produtos[sys->num_produtos].preco = preco;
+    sys->tabela_produtos[sys->num_produtos].quantidade = quantidade;
+    sys->tabela_produtos[sys->num_produtos].vendido = 0;
+    sys->tabela_produtos[sys->num_produtos].iva = iva;
+    strcpy(sys->tabela_produtos[sys->num_produtos].ean, ean);  
+    strcpy(sys->tabela_produtos[sys->num_produtos].descricao, descricao); 
+    
+    /*Inserir ordenado por ordem crescente de ean no array "produtos_por_ean"*/
+    indice_ord = sys->num_produtos;
+
+    /*Descobrir em que posição vai ficar o novo ean*/
+    for (i = 0; i < sys->num_produtos; i++){
+        j = sys->produtos_por_ean[i];
+        if (strcmp(sys->tabela_produtos[j].ean, ean) > 0){
+            indice_ord = i;
+            break;
+        }
+    }
+    /*Passar todos os outros indices para a direita*/
+    for (i = sys->num_produtos; i > indice_ord; i--){
+        sys->produtos_por_ean[i] = sys->produtos_por_ean[i-1];
+    }
+
+    sys->produtos_por_ean[indice_ord] = sys->num_produtos; /*Adicionar ao array ordenado*/
+    sys->num_produtos++; /*Incrementar o número total de produtos*/
+    printf("%d\n", quantidade);
 }
 
 /**
