@@ -1,7 +1,7 @@
 #ifndef AUXILIARES_H
 #define AUXILIARES_H
 
-#include "estruturas.h"
+#include "estruturas.h" /*Importar a biblioteca de estruturas*/
 
 void inicializaSistema(Sys *sys);
 double arredonda(double preco);
@@ -16,6 +16,8 @@ void atualizaProduto(Sys *sys, int indice_prod, char ean[], char iva, double pre
 void insereProduto(Sys *sys, char ean[], char iva, double preco, int quantidade, char descricao[]);
 int testaToken(char *token, char *ean);
 void imprimeProduto(int indice, Produto tabela_produtos[]);
+void listaTodosProdutos(Sys *sys);
+void processaToken(Sys *sys, char token[]);
 void listaCesto(Sys *sys, int indice_tabela, int quantidade_cesto, double preco_com_iva);
 int validaCesto(Sys *sys, char ean[], int quant, int *indice_tabela, int *indice_cesto);
 double precoIVA(Sys *sys, int indice, int quant);

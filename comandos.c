@@ -61,7 +61,6 @@ void addProduto(Sys *sys, char linha[]){
 void listaProduto(Sys *sys, char linha[]){
     /*Imprime a info de todos os produtos (key = l)*/
     char *token, delimitadores[] = " \n\t";
-    int i, verifica = 0, indice;
 
     /*Primeiro corte na string (caracter l)*/
     token = strtok(linha, delimitadores);
@@ -70,48 +69,12 @@ void listaProduto(Sys *sys, char linha[]){
 
     /*Caso o utilizador apenas tenha inserido 'l' */
     if (token == NULL){
-        for (i = 0; i < sys->num_produtos; i++){
-            /*Apenas imprime se houver stock*/
-            if (sys->tabela_produtos[i].quantidade > 0){
-                imprimeProduto(i, sys->tabela_produtos);
-                /*Atualizar a variável de verificação*/
-                verifica = EXISTE;
-            }
-        }
-        if (verifica == 0)
-            /*Imprimir mensagem de erro*/
-            printf("*"NO_PROD_ERR"\n");
+        listaTodosProdutos(sys);
         return;
     }
 
     while (token != NULL){
-        /*Reiniciar a variável*/
-        verifica = 0;
-
-        /*Caso não haja wildcards*/
-        if (strchr(token, '*') == NULL && strchr(token, '?') == NULL){
-            /*Procurar o indice exato do ean*/
-            indice = procuraProduto(sys, token);
-
-            /*Imprimir o produto caso exista e a quantidade não seja 0*/
-            if (indice != NAO_EXISTE && sys->tabela_produtos[indice].quantidade > 0){
-                imprimeProduto(indice, sys->tabela_produtos);
-                verifica = EXISTE;
-            }
-        }
-        /*Caso haja wildcards*/
-        else {
-            for (i = 0; i < sys->num_produtos; i++){
-                if (sys->tabela_produtos[i].quantidade > 0 && testaToken(token, sys->tabela_produtos[i].ean)){
-                    imprimeProduto(i, sys->tabela_produtos);
-                    verifica = EXISTE;
-                }
-            }
-        }
-
-        if (verifica == 0)
-            printf("%s"NO_PROD_ERR"\n", token);
-        
+        processaToken(sys, token);
         /*Voltar a cortar a string à procura de mais argumentos*/
         token = strtok(NULL, delimitadores);
     }
@@ -254,14 +217,13 @@ void fatura(Sys *sys, char linha[]){
     int total_itens_fatura = 0, nif_num, num_args;
     double valor_fatura = 0.0;
 
-    while (isspace(linha[i])){
+    while (isspace(linha[i]))
         i++; /*Incrementar o i até encontrar algo que não seja espaço*/
-    }
+
     /*Verificar se o input tem algum valor*/
     if (linha[i] != '\0'){
         /*Obter o número de argumentos do input*/
         num_args = sscanf(&linha[i], "%s %s", arg1, arg2);
-
         /*Caso o nif não tenha sido omitido (não começa por aspas, não é error e há mais do que uma palavra)
           a primeira palavra lida é obrigatoriamente o NIF*/
         if (!((linha[i] == '"' || (strncmp(&linha[i], "error", 5) == 0 && (isspace(linha[i+5]) || linha[i+5] == '\0'))) || num_args == 1)){
@@ -283,9 +245,8 @@ void fatura(Sys *sys, char linha[]){
     nif_num = atoi(nif_str);
 
     /*Caso o nome seja "error"*/
-    if (strcmp(nome, "error") == 0){
+    if (strcmp(nome, "error") == 0)
         apagaCesto(sys);
-    }
 
     /*Calcular os valores totais*/
     for (i = 0; i < sys->num_cesto; i++){

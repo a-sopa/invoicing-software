@@ -395,7 +395,7 @@ int testaToken(char *token, char *ean){
 }
 
 /**
- * @brief Imprime os produtos da tabela_produtos.
+ * @brief Imprime as características de um produto da tabela_produtos.
  * @param indice Inteiro correspondente ao índice na tabela
  * @param tabela_produtos Array que contém a informação a ser impressa
  */
@@ -407,6 +407,53 @@ void imprimeProduto(int indice, Produto tabela_produtos[]){
         tabela_produtos[indice].vendido,
         tabela_produtos[indice].quantidade,
         tabela_produtos[indice].descricao);
+}
+
+/**
+ * @brief Imprime todos os produtos com stock disponível
+ * @param sys Ponteiro para a estrutura principal do Sistema 
+ */
+void listaTodosProdutos(Sys *sys){
+    int i, verifica = NAO_EXISTE;
+    for (i = 0; i < sys->num_produtos; i++){
+            /*Apenas imprime se houver stock*/
+            if (sys->tabela_produtos[i].quantidade > 0){
+                imprimeProduto(i, sys->tabela_produtos);
+                /*Atualizar a variável de verificação*/
+                verifica = EXISTE;
+            }
+        }
+        if (verifica == NAO_EXISTE)
+            /*Imprimir mensagem de erro*/
+            printf("*"NO_PROD_ERR"\n");
+}
+
+void processaToken(Sys *sys, char token[]){
+    int indice, verifica = 0, i;
+    /*Caso não haja wildcards*/
+    if (strchr(token, '*') == NULL && strchr(token, '?') == NULL){
+        /*Procurar o indice exato do ean*/
+        indice = procuraProduto(sys, token);
+
+        /*Imprimir o produto caso exista e a quantidade não seja 0*/
+        if (indice != NAO_EXISTE && sys->tabela_produtos[indice].quantidade > 0){
+            imprimeProduto(indice, sys->tabela_produtos);
+            verifica = EXISTE;
+        }
+    }
+    /*Caso haja wildcards*/
+    else {
+        for (i = 0; i < sys->num_produtos; i++){
+            if (sys->tabela_produtos[i].quantidade > 0 && testaToken(token, sys->tabela_produtos[i].ean)){
+                imprimeProduto(i, sys->tabela_produtos);
+                verifica = EXISTE;
+            }
+        }
+    }
+
+    if (verifica == 0)
+        printf("%s"NO_PROD_ERR"\n", token);
+        
 }
 
 /**
@@ -638,6 +685,12 @@ int testanif(char nif[]){
     return VALIDO;
 }
 
+/**
+ * @brief Testa o nif e o nome introduzidos
+ * @param nif_str String com o nif do cliente
+ * @param nome String com o nome do cliente
+ * @return VALIDO caso o nome esteja dentro dos parâmetros, INVALIDO caso contrário
+ */
 int testaInputFatura(char nif_str[], char nome[]){
     if (testanif(nif_str) == INVALIDO){
         printf("%s"NO_NIF_ERR"\n", nif_str);
@@ -652,6 +705,10 @@ int testaInputFatura(char nif_str[], char nome[]){
     return VALIDO;
 }
 
+/**
+ * @brief Apaga todo o conteúdo do cesto e devolve-o à lista_produtos
+ * @param sys Ponteiro para a estrutura principal do Sistema
+ */
 void apagaCesto(Sys *sys){
     int i;
     for (i = 0; i < sys->num_cesto; i++){
@@ -667,7 +724,15 @@ void apagaCesto(Sys *sys){
         return;
 }
 
-void emiteFatura(Sys *sys, int nif_num, char nome[], int total_itens, double valor_fatura){
+/**
+ * @brief Aloca memória, guarda a fatura, atualiza totais e esvazia o cesto.
+ * @param sys Ponteiro para a estrutura principal do Sistema
+ * @param nif Inteiro que corresponde ao nif do cliente
+ * @param nome String com o nome do cliente
+ * @param total_itens Inteiro que guarda o total de itens na fatura
+ * @param valor_fatura Valor monetário da fatura (com IVA)
+ */
+void emiteFatura(Sys *sys, int nif, char nome[], int total_itens, double valor_fatura){
     /*Reservar memória*/
     if (sys->num_faturas >= sys->capacidade_faturas){
         if (sys->capacidade_faturas == 0){
@@ -678,7 +743,7 @@ void emiteFatura(Sys *sys, int nif_num, char nome[], int total_itens, double val
         sys->lista_faturas = realloc(sys->lista_faturas, sys->capacidade_faturas * sizeof(Fatura)); /*Alocar espaço de memória*/
     }
     /*Guardar Fatura*/
-    sys->lista_faturas[sys->num_faturas].nif = nif_num; /*Guardar NIF*/
+    sys->lista_faturas[sys->num_faturas].nif = nif; /*Guardar NIF*/
     /*Reservar espaço de memória para o nome cliente*/
     sys->lista_faturas[sys->num_faturas].nome_cliente = malloc(strlen(nome) + 1); 
     strcpy(sys->lista_faturas[sys->num_faturas].nome_cliente, nome); /*Guardar nome do cliente (array dinâmico)*/
