@@ -4,3 +4,8 @@
 !**.c
 !**.h
 
+*.zip
+
+public/
+vscode/ 
+__MACOSX/
